@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"net/url"
 
-	"bytes"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/lieutenant"
+	"bytes"
 )
 
 const (
@@ -19,8 +19,8 @@ const (
 // exists, creating one if neccessary. It uses the default 'elastic' username
 // and password to create the account if neccessary, so can be used for
 // bootstrapping clusters
-func EnsureAccount(user, pass string, roles ...string) lieutenant.Hook {
-	return func(m lieutenant.Interface) error {
+func EnsureAccount(user, pass string, roles ...string) manager.Hook {
+	return func(m manager.Interface) error {
 		data, err := json.Marshal(struct {
 			Password string   `json:"password"`
 			Roles    []string `json:"roles"`
@@ -66,7 +66,7 @@ func EnsureAccount(user, pass string, roles ...string) lieutenant.Hook {
 	}
 }
 
-func validateUserAccount(m lieutenant.Interface) error {
+func validateUserAccount(m manager.Interface) error {
 	req, err := m.BuildRequest(
 		"GET",
 		fmt.Sprintf("/_xpack/security/user/%s", m.Options().SidecarUsername()),

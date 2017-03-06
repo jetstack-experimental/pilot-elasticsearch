@@ -1,4 +1,4 @@
-package lieutenant
+package manager
 
 import "gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 

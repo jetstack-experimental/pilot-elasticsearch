@@ -9,14 +9,14 @@ import (
 
 	"github.com/olivere/elastic"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/lieutenant"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 )
 
 // DrainShards sets the cluster.routing.allocation.exclude._name key to this
 // nodes name, in order to begin draining indices from the node. It then blocks
 // until the node contains no documents.
-func DrainShards(m lieutenant.Interface) error {
+func DrainShards(m manager.Interface) error {
 	// Only run this hook on data nodes
 	if m.Options().Role() != util.RoleData {
 		return nil
@@ -50,12 +50,12 @@ func DrainShards(m lieutenant.Interface) error {
 // AcceptShards clears the cluster.routing.allocation.exclude._name key in the
 // managers Elasticsearch cluster. This can be used as a postStop hook after
 // running the DrainShards hook
-func AcceptShards(m lieutenant.Interface) error {
+func AcceptShards(m manager.Interface) error {
 	return setExcludeAllocation(m, "")
 }
 
 // setExcludeAllocation sets the cluster.routing.allocation.exclude._name key
-func setExcludeAllocation(m lieutenant.Interface, s string) error {
+func setExcludeAllocation(m manager.Interface, s string) error {
 	req, err := m.BuildRequest(
 		"PUT",
 		"/_cluster/settings",
@@ -88,7 +88,7 @@ func setExcludeAllocation(m lieutenant.Interface, s string) error {
 
 // nodeShouldBeRemovedFromCluster returns true if this node is no longer
 // going to be serviced by the StatefulSet because of a scale down event
-func nodeShouldBeRemovedFromCluster(m lieutenant.Interface) (bool, error) {
+func nodeShouldBeRemovedFromCluster(m manager.Interface) (bool, error) {
 	nodeIndex, err := util.NodeIndex(m.Options().PodName())
 
 	if err != nil {
@@ -105,7 +105,7 @@ func nodeShouldBeRemovedFromCluster(m lieutenant.Interface) (bool, error) {
 }
 
 // waitUntilNodeIsEmpty blocks until the node has 0 documents
-func waitUntilNodeIsEmpty(m lieutenant.Interface) error {
+func waitUntilNodeIsEmpty(m manager.Interface) error {
 	for {
 		empty, err := nodeIsEmpty(m)
 
@@ -122,7 +122,7 @@ func waitUntilNodeIsEmpty(m lieutenant.Interface) error {
 }
 
 // nodeIsEmpty returns true if this node contains 0 documents
-func nodeIsEmpty(m lieutenant.Interface) (bool, error) {
+func nodeIsEmpty(m manager.Interface) (bool, error) {
 	req, err := m.BuildRequest(
 		"GET",
 		"/_nodes/stats",

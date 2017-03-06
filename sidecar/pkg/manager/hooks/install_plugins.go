@@ -6,13 +6,13 @@ import (
 	"os/exec"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/es"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/lieutenant"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 )
 
 // InstallPlugins returns a hook that will install the plugins specified in
 // plugins. If any of the plugins fail to install, an error will be returned
-func InstallPlugins(plugins ...string) func(lieutenant.Interface) error {
-	return func(m lieutenant.Interface) error {
+func InstallPlugins(plugins ...string) func(manager.Interface) error {
+	return func(m manager.Interface) error {
 		for _, plugin := range plugins {
 			if plugin == "" {
 				continue

@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/lieutenant"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/lieutenant/hooks"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 )
 
@@ -31,23 +31,23 @@ var (
 				log.Fatalf("error creating kubernetes client: %s", err.Error())
 			}
 
-			m := lieutenant.NewManager(
-				lieutenant.NewOptions(
-					lieutenant.SetStatefulSetName(statefulSetName),
-					lieutenant.SetPodName(podName),
-					lieutenant.SetNamespace(namespace),
-					lieutenant.SetRole(util.Role(role.String())),
-					lieutenant.SetSidecarUsername(esSidecarUsername),
-					lieutenant.SetSidecarPassword(esSidecarPassword),
+			m := manager.NewManager(
+				manager.NewOptions(
+					manager.SetStatefulSetName(statefulSetName),
+					manager.SetPodName(podName),
+					manager.SetNamespace(namespace),
+					manager.SetRole(util.Role(role.String())),
+					manager.SetSidecarUsername(esSidecarUsername),
+					manager.SetSidecarPassword(esSidecarPassword),
 				),
 				kubeClient,
 			)
 
-			m.RegisterHook(lieutenant.PhasePreStart, hooks.InstallPlugins(plugins...))
+			m.RegisterHook(manager.PhasePreStart, hooks.InstallPlugins(plugins...))
 			// ensure user exists for the lieutenant
-			m.RegisterHook(lieutenant.PhasePostStart, hooks.EnsureAccount(esSidecarUsername, esSidecarPassword, "superuser"))
-			m.RegisterHook(lieutenant.PhasePreStop, hooks.DrainShards)
-			m.RegisterHook(lieutenant.PhasePostStop, hooks.AcceptShards)
+			m.RegisterHook(manager.PhasePostStart, hooks.EnsureAccount(esSidecarUsername, esSidecarPassword, "superuser"))
+			m.RegisterHook(manager.PhasePreStop, hooks.DrainShards)
+			m.RegisterHook(manager.PhasePostStop, hooks.AcceptShards)
 
 			if err := m.Run(); err != nil {
 				log.Fatalf("error running elasticsearch: %s", err.Error())

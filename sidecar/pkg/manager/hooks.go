@@ -1,4 +1,4 @@
-package lieutenant
+package manager
 
 // Hook describes a function that can be used to hook into phase
 // change events in Elasticsearch

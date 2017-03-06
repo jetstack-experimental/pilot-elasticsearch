@@ -1,4 +1,4 @@
-package lieutenant
+package manager
 
 import (
 	"fmt"
