@@ -1,0 +1,22 @@
+## This manifest describes a headless service that matches all
+## elasticsearch nodes, regardless of role
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "fullname" . }}-cluster
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  clusterIP: None
+  ports:
+  - name: transport
+    port: 9300
+    targetPort: 9300
+  selector:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"

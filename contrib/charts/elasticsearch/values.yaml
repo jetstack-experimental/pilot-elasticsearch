@@ -1,0 +1,55 @@
+# Default values for elasticsearch.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+elasticsearch:
+  plugins: "io.fabric8:elasticsearch-cloud-kubernetes:5.2.0"
+  # NOTE: DO NOT SPECIFY MORE THAN ONE SYSCTL FOR NOW
+  sysctl:
+  - vm.max_map_count=262144
+
+image:
+  repository: munnerz/elasticsearch-k8s
+  tag: lieutenant
+  pullPolicy: IfNotPresent
+  ## This sets the group of the persistent volume created for
+  ## the data nodes. This must be the same as the user that elasticsearch
+  ## runs as within the container.
+  fsGroup: 1000
+
+client:
+  resources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+data:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
+
+  persistentVolume:
+    ## Set to false to disable persisting data (uses an emptyDir) in place
+    ## of persistent volume claims
+    enabled: false
+    ## If persistence is enabled, specify the storageClass to use here
+    # storageClass: fast
+    ## The size of the persistent volume
+    size: 10Gi
+
+master:
+  resources:
+    requests:
+      cpu: 1
+      memory: 4Gi
+    limits:
+      cpu: 2
+      memory: 4Gi
