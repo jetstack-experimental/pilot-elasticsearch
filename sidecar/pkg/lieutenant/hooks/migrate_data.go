@@ -1,9 +1,13 @@
 package hooks
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
+	"time"
+
+	"github.com/olivere/elastic"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/lieutenant"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
@@ -36,8 +40,7 @@ func MigrateData(m lieutenant.Interface) error {
 		return fmt.Errorf("error removing node from cluster: %s", err.Error())
 	}
 
-	return nil
-	// TODO: here, wait for the document count for this node to drop to 0
+	return waitUntilNodeIsEmpty(m)
 }
 
 func nodeShouldBeRemovedFromCluster(m lieutenant.Interface) (bool, error) {
@@ -87,4 +90,53 @@ func excludeNodeFromBeingAllocatedShards(m lieutenant.Interface) error {
 	}
 
 	return nil
+}
+
+func waitUntilNodeIsEmpty(m lieutenant.Interface) error {
+	for {
+		empty, err := nodeIsEmpty(m)
+
+		if err != nil {
+			return fmt.Errorf("error waiting for node to be empty: %s", err.Error())
+		}
+
+		if empty {
+			return nil
+		}
+
+		time.Sleep(time.Second * 1)
+	}
+}
+
+func nodeIsEmpty(m lieutenant.Interface) (bool, error) {
+	req, err := m.BuildRequest(
+		"GET",
+		"/_nodes/stats",
+		nil,
+	)
+
+	if err != nil {
+		return false, fmt.Errorf("error constructing request: %s", err.Error())
+	}
+
+	resp, err := m.ESClient().Do(req)
+
+	if err != nil {
+		return false, fmt.Errorf("error getting node stats: %s", err.Error())
+	}
+
+	var nodesStatsResponse elastic.NodesStatsResponse
+	err = json.NewDecoder(resp.Body).Decode(&nodesStatsResponse)
+
+	if err != nil {
+		return false, fmt.Errorf("error decoding response body: %s", err.Error())
+	}
+
+	for _, n := range nodesStatsResponse.Nodes {
+		if n.Name == m.Options().PodName() {
+			return n.Indices.Docs.Count == 0, nil
+		}
+	}
+
+	return false, nil
 }
