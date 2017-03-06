@@ -44,8 +44,10 @@ var (
 			)
 
 			m.RegisterHook(lieutenant.PhasePreStart, hooks.InstallPlugins(plugins...))
-			m.RegisterHook(lieutenant.PhasePostStart, hooks.CreateAdminAccount)
-			m.RegisterHook(lieutenant.PhasePreStop, hooks.MigrateData)
+			// ensure user exists for the lieutenant
+			m.RegisterHook(lieutenant.PhasePostStart, hooks.EnsureAccount(esSidecarUsername, esSidecarPassword, "superuser"))
+			m.RegisterHook(lieutenant.PhasePreStop, hooks.DrainShards)
+			m.RegisterHook(lieutenant.PhasePostStop, hooks.AcceptShards)
 
 			if err := m.Run(); err != nil {
 				log.Fatalf("error running elasticsearch: %s", err.Error())

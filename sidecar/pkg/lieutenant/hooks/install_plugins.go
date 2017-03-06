@@ -9,6 +9,8 @@ import (
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/lieutenant"
 )
 
+// InstallPlugins returns a hook that will install the plugins specified in
+// plugins. If any of the plugins fail to install, an error will be returned
 func InstallPlugins(plugins ...string) func(lieutenant.Interface) error {
 	return func(m lieutenant.Interface) error {
 		for _, plugin := range plugins {

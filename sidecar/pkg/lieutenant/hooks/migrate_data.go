@@ -13,7 +13,10 @@ import (
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 )
 
-func MigrateData(m lieutenant.Interface) error {
+// DrainShards sets the cluster.routing.allocation.exclude._name key to this
+// nodes name, in order to begin draining indices from the node. It then blocks
+// until the node contains no documents.
+func DrainShards(m lieutenant.Interface) error {
 	// Only run this hook on data nodes
 	if m.Options().Role() != util.RoleData {
 		return nil
@@ -33,7 +36,8 @@ func MigrateData(m lieutenant.Interface) error {
 
 	log.Printf("data migration required")
 
-	err = excludeNodeFromBeingAllocatedShards(m)
+	// exclude this node from being allocated shards
+	err = setExcludeAllocation(m, m.Options().PodName())
 
 	if err != nil {
 		// TODO: retry?
@@ -43,25 +47,15 @@ func MigrateData(m lieutenant.Interface) error {
 	return waitUntilNodeIsEmpty(m)
 }
 
-func nodeShouldBeRemovedFromCluster(m lieutenant.Interface) (bool, error) {
-	nodeIndex, err := util.NodeIndex(m.Options().PodName())
-
-	if err != nil {
-		return false, fmt.Errorf("error parsing node index: %s", err.Error())
-	}
-
-	ps, err := m.KubeClient().Apps().StatefulSets(m.Options().Namespace()).Get(m.Options().StatefulSetName())
-
-	if err != nil {
-		return false, fmt.Errorf("error getting statefulset: %s", err.Error())
-	}
-
-	return nodeIndex >= int(*ps.Spec.Replicas), nil
+// AcceptShards clears the cluster.routing.allocation.exclude._name key in the
+// managers Elasticsearch cluster. This can be used as a postStop hook after
+// running the DrainShards hook
+func AcceptShards(m lieutenant.Interface) error {
+	return setExcludeAllocation(m, "")
 }
 
-func excludeNodeFromBeingAllocatedShards(m lieutenant.Interface) error {
-	log.Printf("Excluding node from cluster")
-
+// setExcludeAllocation sets the cluster.routing.allocation.exclude._name key
+func setExcludeAllocation(m lieutenant.Interface, s string) error {
 	req, err := m.BuildRequest(
 		"PUT",
 		"/_cluster/settings",
@@ -71,7 +65,7 @@ func excludeNodeFromBeingAllocatedShards(m lieutenant.Interface) error {
 				"transient": {
 					"cluster.routing.allocation.exclude._name": "%s"
 				}	
-			}`, m.Options().PodName()),
+			}`, s),
 		),
 	)
 
@@ -92,6 +86,25 @@ func excludeNodeFromBeingAllocatedShards(m lieutenant.Interface) error {
 	return nil
 }
 
+// nodeShouldBeRemovedFromCluster returns true if this node is no longer
+// going to be serviced by the StatefulSet because of a scale down event
+func nodeShouldBeRemovedFromCluster(m lieutenant.Interface) (bool, error) {
+	nodeIndex, err := util.NodeIndex(m.Options().PodName())
+
+	if err != nil {
+		return false, fmt.Errorf("error parsing node index: %s", err.Error())
+	}
+
+	ps, err := m.KubeClient().Apps().StatefulSets(m.Options().Namespace()).Get(m.Options().StatefulSetName())
+
+	if err != nil {
+		return false, fmt.Errorf("error getting statefulset: %s", err.Error())
+	}
+
+	return nodeIndex >= int(*ps.Spec.Replicas), nil
+}
+
+// waitUntilNodeIsEmpty blocks until the node has 0 documents
 func waitUntilNodeIsEmpty(m lieutenant.Interface) error {
 	for {
 		empty, err := nodeIsEmpty(m)
@@ -108,6 +121,7 @@ func waitUntilNodeIsEmpty(m lieutenant.Interface) error {
 	}
 }
 
+// nodeIsEmpty returns true if this node contains 0 documents
 func nodeIsEmpty(m lieutenant.Interface) (bool, error) {
 	req, err := m.BuildRequest(
 		"GET",

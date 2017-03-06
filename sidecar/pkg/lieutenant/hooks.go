@@ -1,17 +1,24 @@
 package lieutenant
 
+// Hook describes a function that can be used to hook into phase
+// change events in Elasticsearch
 type Hook func(Interface) error
 
+// Phase describes the phase that the Elasticsearch
+// manager is in.
 type Phase string
 
 const (
-	// PhasePreStart occurs after the Elasticsearch manager has been
-	// constructed, but before Elasticsearch itself has been started on
-	// this node.
+	// PhasePreStart occurs just before the Elasticsearch manager has
+	// launched the Elasticsearch process
 	PhasePreStart Phase = "preStart"
 	// PhasePostStart occurs just after the Elasticsearch manager has
 	// launched the Elasticsearch process
 	PhasePostStart Phase = "postStart"
-	PhasePreStop   Phase = "preStop"
-	PhasePostStop  Phase = "postStop"
+	// PhasePreStop occurs just before the Elasticsearch manager stops
+	// the Elasticsearch process
+	PhasePreStop Phase = "preStop"
+	// PhasePostStop occurs just after the Elasticsearch manager has
+	// stopped the Elasticsearch process
+	PhasePostStop Phase = "postStop"
 )

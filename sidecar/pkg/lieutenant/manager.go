@@ -24,6 +24,7 @@ const (
 	esPort = 9200
 )
 
+// Interface describes a manager for an Elasticsearch process
 type Interface interface {
 	// Options returns a set of options for this manager
 	Options() Options
@@ -37,15 +38,17 @@ type Interface interface {
 	// RegisterHook will register a hook to execute in a particular phase
 	RegisterHook(Phase, Hook)
 	// Run will start Elasticsearch with the managers provided configuration.
-	// It will block until Elasticsearch is exited, for whatever reason
+	// It will block until Elasticsearch is exited, for whatever reason, It is
+	// responsible for firing preStart and postStart hooks.
 	Run() error
 	// Shutdown will handle a shutdown signal. It will block until it is safe to shut
-	// down this node and will handle starting migrations of data etc.
+	// down this node and will fire preStop and postStop hooks.
 	Shutdown() error
 }
 
 var _ Interface = &Manager{}
 
+// Manager is the default implementation of an Elasticsearch process manager
 type Manager struct {
 	options    Options
 	kubeClient *kubernetes.Clientset
@@ -56,6 +59,8 @@ type Manager struct {
 	esCmd *exec.Cmd
 }
 
+// NewManager constructs a new Manager instance with the given Options
+// and Kubernetes API client
 func NewManager(opts Options, kubeClient *kubernetes.Clientset) Interface {
 	return &Manager{
 		options:    opts,
@@ -64,18 +69,23 @@ func NewManager(opts Options, kubeClient *kubernetes.Clientset) Interface {
 	}
 }
 
+// Options returns a set of options for this manager
 func (m *Manager) Options() Options {
 	return m.options
 }
 
+// ESClient returns an HTTP client for communicating with Elasticsearch
 func (m *Manager) ESClient() *http.Client {
 	return http.DefaultClient
 }
 
+// KubeClient returns a kubernetes Clientset that can be used to
+// communicate with the clusters apiserver
 func (m *Manager) KubeClient() *kubernetes.Clientset {
 	return m.kubeClient
 }
 
+// RegisterHook will register a hook to execute in a particular phase
 func (m *Manager) RegisterHook(p Phase, h Hook) {
 	m.hookLock.Lock()
 	defer m.hookLock.Unlock()
@@ -87,6 +97,7 @@ func (m *Manager) RegisterHook(p Phase, h Hook) {
 	m.hooks[p] = hooks
 }
 
+// BuildRequest builds an authenticated http.Request for the Elasticsearch cluster
 func (m *Manager) BuildRequest(method, path string, body io.Reader) (*http.Request, error) {
 	// TODO: refactor scheme & host out of this method
 	builtURL := url.URL{
@@ -99,6 +110,9 @@ func (m *Manager) BuildRequest(method, path string, body io.Reader) (*http.Reque
 	return http.NewRequest(method, builtURL.String(), body)
 }
 
+// Run will start Elasticsearch with the managers provided configuration.
+// It will block until Elasticsearch is exited, for whatever reason, It is
+// responsible for firing preStart and postStart hooks.
 func (m *Manager) Run() error {
 	if err := m.transitionPhase(PhasePreStart); err != nil {
 		return fmt.Errorf("error running: %s", err.Error())
@@ -115,6 +129,37 @@ func (m *Manager) Run() error {
 	return m.esCmd.Run()
 }
 
+// Shutdown will handle a shutdown signal. It will block until it is safe to shut
+// down this node and will fire preStop and postStop hooks.
+func (m *Manager) Shutdown() error {
+	defer os.Exit(1)
+	if err := m.transitionPhase(PhasePreStop); err != nil {
+		return fmt.Errorf("error running lieutenant pre stop hooks: %s", err.Error())
+	}
+
+	if m.esCmd != nil {
+		m.esCmd.Process.Signal(syscall.SIGTERM)
+		state, err := m.esCmd.Process.Wait()
+
+		// we'll skip this error so that postStop hooks are fired
+		if err != nil {
+			return fmt.Errorf("elasticsearch exited with error: %s", err.Error())
+		}
+
+		if !state.Exited() {
+			return fmt.Errorf("warning: elasticsearch has not exited")
+		}
+	}
+
+	if err := m.transitionPhase(PhasePostStop); err != nil {
+		return fmt.Errorf("error running lieutenant post stop hooks: %s", err.Error())
+	}
+
+	return nil
+}
+
+// firePostStart will wait until the Elasticsearch process is accessible,
+// and then fire the postStart hooks
 func (m *Manager) firePostStart() {
 	for {
 		if m.listening() {
@@ -131,6 +176,8 @@ func (m *Manager) firePostStart() {
 	}
 }
 
+// listening will return true if the Elasticsearch process is accessible
+// on the HTTP client port
 func (m *Manager) listening() bool {
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", esHost, esPort))
 	if err != nil {
