@@ -8,6 +8,7 @@ import (
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks/events"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/probe"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 )
@@ -70,8 +71,14 @@ var (
 			// TODO: work out a way to run AcceptShards as a postStop hook by talking
 			// to the other nodes in cluster
 			m.RegisterHooks(manager.PhasePreStop,
-				hooks.OnlyRoles(hooks.DrainShards, util.RoleData),
-				hooks.OnlyRoles(hooks.AcceptShards, util.RoleData),
+				hooks.OnlyRoles(
+					hooks.OnEvent(
+						events.ScaleDownEvent,
+						hooks.DrainShards,
+						hooks.AcceptShards,
+					),
+					util.RoleData,
+				),
 			)
 
 			// Start readiness checker
