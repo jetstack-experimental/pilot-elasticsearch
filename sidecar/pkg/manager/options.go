@@ -50,6 +50,8 @@ type optionsImpl struct {
 	sidecarPassword  string
 }
 
+var _ Options = &optionsImpl{}
+
 func (o *optionsImpl) StatefulSetName() string { return o.statefulSetName }
 func (o *optionsImpl) PodName() string         { return o.podName }
 func (o *optionsImpl) Namespace() string       { return o.namespace }
