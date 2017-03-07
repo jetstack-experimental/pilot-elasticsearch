@@ -38,6 +38,7 @@ func EnsureAccount(user, pass string, roles ...string) manager.Hook {
 		req, err := m.BuildRequest(
 			"POST",
 			fmt.Sprintf("/_xpack/security/user/%s", user),
+			"",
 			bytes.NewReader(data),
 		)
 
@@ -70,6 +71,7 @@ func validateUserAccount(m manager.Interface) error {
 	req, err := m.BuildRequest(
 		"GET",
 		fmt.Sprintf("/_xpack/security/user/%s", m.Options().SidecarUsername()),
+		"",
 		nil,
 	)
 

@@ -59,6 +59,7 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 	req, err := m.BuildRequest(
 		"PUT",
 		"/_cluster/settings",
+		"",
 		strings.NewReader(
 			fmt.Sprintf(`
 			{
@@ -126,6 +127,7 @@ func nodeIsEmpty(m manager.Interface) (bool, error) {
 	req, err := m.BuildRequest(
 		"GET",
 		"/_nodes/stats",
+		"",
 		nil,
 	)
 

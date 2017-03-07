@@ -17,6 +17,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/es"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/probe"
 )
 
 const (
@@ -34,9 +35,11 @@ type Interface interface {
 	// communicate with the clusters apiserver
 	KubeClient() *kubernetes.Clientset
 	// BuildRequest creates a Request type used to talk to Elasticsearch
-	BuildRequest(method, path string, body io.Reader) (*http.Request, error)
+	BuildRequest(method, path, query string, body io.Reader) (*http.Request, error)
 	// RegisterHook will register a hook to execute in a particular phase
-	RegisterHook(Phase, Hook)
+	RegisterHooks(Phase, ...Hook)
+	// Phase returns the current phase of the Elasticsearch process
+	Phase() Phase
 	// Run will start Elasticsearch with the managers provided configuration.
 	// It will block until Elasticsearch is exited, for whatever reason, It is
 	// responsible for firing preStart and postStart hooks.
@@ -44,6 +47,8 @@ type Interface interface {
 	// Shutdown will handle a shutdown signal. It will block until it is safe to shut
 	// down this node and will fire preStop and postStop hooks.
 	Shutdown() error
+	ReadinessCheck() probe.Check
+	LivenessCheck() probe.Check
 }
 
 var _ Interface = &Manager{}
@@ -55,6 +60,7 @@ type Manager struct {
 
 	hookLock sync.RWMutex
 	hooks    map[Phase][]Hook
+	phase    Phase
 
 	esCmd *exec.Cmd
 }
@@ -85,29 +91,34 @@ func (m *Manager) KubeClient() *kubernetes.Clientset {
 	return m.kubeClient
 }
 
-// RegisterHook will register a hook to execute in a particular phase
-func (m *Manager) RegisterHook(p Phase, h Hook) {
+// BuildRequest builds an authenticated http.Request for the Elasticsearch cluster
+func (m *Manager) BuildRequest(method, path, query string, body io.Reader) (*http.Request, error) {
+	// TODO: refactor scheme & host out of this method
+	builtURL := url.URL{
+		Scheme:   "http",
+		Host:     fmt.Sprintf("%s:%d", esHost, esPort),
+		RawQuery: query,
+		Path:     path,
+		User:     url.UserPassword(m.Options().SidecarUsername(), m.Options().SidecarPassword()),
+	}
+
+	return http.NewRequest(method, builtURL.String(), body)
+}
+
+// RegisterHooks will register a hook to execute in a particular phase
+func (m *Manager) RegisterHooks(p Phase, h ...Hook) {
 	m.hookLock.Lock()
 	defer m.hookLock.Unlock()
 	hooks := []Hook{}
 	if existingHooks, ok := m.hooks[p]; ok {
 		hooks = existingHooks
 	}
-	hooks = append(hooks, h)
+	hooks = append(hooks, h...)
 	m.hooks[p] = hooks
 }
 
-// BuildRequest builds an authenticated http.Request for the Elasticsearch cluster
-func (m *Manager) BuildRequest(method, path string, body io.Reader) (*http.Request, error) {
-	// TODO: refactor scheme & host out of this method
-	builtURL := url.URL{
-		Scheme: "http",
-		Host:   fmt.Sprintf("%s:%d", esHost, esPort),
-		Path:   path,
-		User:   url.UserPassword(m.Options().SidecarUsername(), m.Options().SidecarPassword()),
-	}
-
-	return http.NewRequest(method, builtURL.String(), body)
+func (m *Manager) Phase() Phase {
+	return m.phase
 }
 
 // Run will start Elasticsearch with the managers provided configuration.
