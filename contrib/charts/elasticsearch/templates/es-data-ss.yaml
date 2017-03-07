@@ -9,7 +9,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
     role: data
 spec:
-  replicas: {{ default 1 .Values.data.replicaCount }}
+  replicas: {{ .Values.data.replicaCount }}
   serviceName: es-data
   template:
     metadata:
@@ -38,6 +38,7 @@ spec:
         heritage: "{{ .Release.Service }}"
         role: data
     spec:
+      terminationGracePeriodSeconds: 1800
       serviceAccount: "{{ template "fullname" . }}"
       serviceAccountName: "{{ template "fullname" . }}"
       securityContext:
@@ -64,6 +65,20 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
+        readinessProbe:
+          httpGet:
+            port: 12001
+            path: /
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            port: 12000
+            path: /
+          initialDelaySeconds: 30
+          periodSeconds: 2
+          timeoutSeconds: 5
         securityContext:
           capabilities:
             add:

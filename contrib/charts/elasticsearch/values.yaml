@@ -18,6 +18,7 @@ image:
   fsGroup: 1000
 
 client:
+  replicaCount: 2
   resources:
     requests:
       cpu: 1
@@ -46,6 +47,7 @@ data:
     size: 10Gi
 
 master:
+  replicaCount: 3
   resources:
     requests:
       cpu: 1

@@ -9,7 +9,7 @@ metadata:
     heritage: "{{ .Release.Service }}"
     role: master
 spec:
-  replicas: 1
+  replicas: {{ .Values.master.replicaCount }}
   template:
     metadata:
       annotations:
@@ -37,6 +37,7 @@ spec:
         heritage: "{{ .Release.Service }}"
         role: master
     spec:
+      terminationGracePeriodSeconds: 1800
       serviceAccount: "{{ template "fullname" . }}"
       serviceAccountName: "{{ template "fullname" . }}"
       containers:
@@ -63,6 +64,20 @@ spec:
               fieldPath: metadata.name
         resources:
 {{ toYaml .Values.client.resources | indent 10 }}
+        readinessProbe:
+          httpGet:
+            port: 12001
+            path: /
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            port: 12000
+            path: /
+          initialDelaySeconds: 30
+          periodSeconds: 2
+          timeoutSeconds: 5
         ports:
         - name: transport
           containerPort: 9300
