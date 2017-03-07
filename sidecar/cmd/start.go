@@ -1,12 +1,14 @@
 package cmd
 
 import (
-	"log"
+	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks"
+	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/probe"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 )
 
@@ -43,11 +45,46 @@ var (
 				kubeClient,
 			)
 
-			m.RegisterHook(manager.PhasePreStart, hooks.InstallPlugins(plugins...))
-			// ensure user exists for the lieutenant
-			m.RegisterHook(manager.PhasePostStart, hooks.EnsureAccount(esSidecarUsername, esSidecarPassword, "superuser"))
-			m.RegisterHook(manager.PhasePreStop, hooks.DrainShards)
-			m.RegisterHook(manager.PhasePostStop, hooks.AcceptShards)
+			// Install plugins before Elasticsearch starts
+			m.RegisterHooks(manager.PhasePreStart,
+				hooks.InstallPlugins(plugins...),
+			)
+
+			// Ensure user exists for the lieutenant
+			m.RegisterHooks(manager.PhasePostStart,
+				hooks.AllowErrors(
+					// Only run on data nodes as a shard is required to exist
+					// in order to write user data
+					hooks.OnlyRoles(
+						hooks.Retry(
+							hooks.EnsureAccount(esSidecarUsername, esSidecarPassword, "superuser"),
+							time.Second*2, // wait 2 seconds between each attempt
+							10,            // try 10 times
+						),
+						util.RoleData,
+					),
+				),
+			)
+
+			// Run DrainShards followed by AcceptShards.
+			// TODO: work out a way to run AcceptShards as a postStop hook by talking
+			// to the other nodes in cluster
+			m.RegisterHooks(manager.PhasePreStop,
+				hooks.OnlyRoles(hooks.DrainShards, util.RoleData),
+				hooks.OnlyRoles(hooks.AcceptShards, util.RoleData),
+			)
+
+			// Start readiness checker
+			go (&probe.Listener{
+				Port:  12001,
+				Check: m.ReadinessCheck(),
+			}).Listen()
+
+			// Start liveness checker
+			go (&probe.Listener{
+				Port:  12000,
+				Check: m.LivenessCheck(),
+			}).Listen()
 
 			if err := m.Run(); err != nil {
 				log.Fatalf("error running elasticsearch: %s", err.Error())

@@ -17,11 +17,6 @@ import (
 // nodes name, in order to begin draining indices from the node. It then blocks
 // until the node contains no documents.
 func DrainShards(m manager.Interface) error {
-	// Only run this hook on data nodes
-	if m.Options().Role() != util.RoleData {
-		return nil
-	}
-
 	shouldRemove, err := nodeShouldBeRemovedFromCluster(m)
 
 	if err != nil {
