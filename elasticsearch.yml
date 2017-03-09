@@ -11,4 +11,4 @@ cloud:
 
 discovery.zen.hosts_provider: ${DISCOVERY_PROVIDER}
 
-xpack.security.http.filter.allow: "127.0.0.1"
+xpack.security.enabled: false

@@ -99,7 +99,10 @@ func (m *Manager) BuildRequest(method, path, query string, body io.Reader) (*htt
 		Host:     fmt.Sprintf("%s:%d", esHost, esPort),
 		RawQuery: query,
 		Path:     path,
-		User:     url.UserPassword(m.Options().SidecarUsername(), m.Options().SidecarPassword()),
+	}
+
+	if m.Options().SidecarUsername() != "" {
+		builtURL.User = url.UserPassword(m.Options().SidecarUsername(), m.Options().SidecarPassword())
 	}
 
 	return http.NewRequest(method, builtURL.String(), body)
