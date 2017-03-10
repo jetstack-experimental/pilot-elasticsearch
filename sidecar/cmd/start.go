@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"time"
-
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -40,8 +38,6 @@ var (
 					manager.SetPodName(podName),
 					manager.SetNamespace(namespace),
 					manager.SetRole(util.Role(role.String())),
-					manager.SetSidecarUsername(esSidecarUsername),
-					manager.SetSidecarPassword(esSidecarPassword),
 				),
 				kubeClient,
 			)
@@ -52,20 +48,20 @@ var (
 			)
 
 			// Ensure user exists for the lieutenant
-			m.RegisterHooks(manager.PhasePostStart,
-				hooks.AllowErrors(
-					// Only run on data nodes as a shard is required to exist
-					// in order to write user data
-					hooks.OnlyRoles(
-						hooks.Retry(
-							hooks.EnsureAccount(esSidecarUsername, esSidecarPassword, "superuser"),
-							time.Second*2, // wait 2 seconds between each attempt
-							10,            // try 10 times
-						),
-						util.RoleData,
-					),
-				),
-			)
+			// m.RegisterHooks(manager.PhasePostStart,
+			// 	hooks.AllowErrors(
+			// 		// Only run on data nodes as a shard is required to exist
+			// 		// in order to write user data
+			// 		hooks.OnlyRoles(
+			// 			hooks.Retry(
+			// 				hooks.EnsureAccount(esSidecarUsername, esSidecarPassword, "superuser"),
+			// 				time.Second*2, // wait 2 seconds between each attempt
+			// 				10,            // try 10 times
+			// 			),
+			// 			util.RoleData,
+			// 		),
+			// 	),
+			// )
 
 			// Run DrainShards followed by AcceptShards.
 			// TODO: work out a way to run AcceptShards as a postStop hook by talking
