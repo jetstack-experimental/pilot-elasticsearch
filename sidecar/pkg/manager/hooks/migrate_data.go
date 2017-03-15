@@ -8,32 +8,18 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/olivere/elastic"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 )
 
 // DrainShards sets the cluster.routing.allocation.exclude._name key to this
 // nodes name, in order to begin draining indices from the node. It then blocks
 // until the node contains no documents.
 func DrainShards(m manager.Interface) error {
-	shouldRemove, err := nodeShouldBeRemovedFromCluster(m)
-
-	if err != nil {
-		// TODO: retry?
-		return fmt.Errorf("error determining whether to remove this node from cluster: %s", err.Error())
-	}
-
-	if !shouldRemove {
-		log.Printf("data migration not needed")
-		return nil
-	}
-
-	log.Printf("data migration required")
+	log.Infof("draining shards from node...")
 
 	// exclude this node from being allocated shards
-	err = setExcludeAllocation(m, m.Options().PodName())
+	err := setExcludeAllocation(m, m.Options().PodName())
 
 	if err != nil {
 		// TODO: retry?
@@ -81,24 +67,6 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 	}
 
 	return nil
-}
-
-// nodeShouldBeRemovedFromCluster returns true if this node is no longer
-// going to be serviced by the StatefulSet because of a scale down event
-func nodeShouldBeRemovedFromCluster(m manager.Interface) (bool, error) {
-	nodeIndex, err := util.NodeIndex(m.Options().PodName())
-
-	if err != nil {
-		return false, fmt.Errorf("error parsing node index: %s", err.Error())
-	}
-
-	ps, err := m.KubeClient().Apps().StatefulSets(m.Options().Namespace()).Get(m.Options().StatefulSetName(), metav1.GetOptions{})
-
-	if err != nil {
-		return false, fmt.Errorf("error getting statefulset: %s", err.Error())
-	}
-
-	return nodeIndex >= int(*ps.Spec.Replicas), nil
 }
 
 // waitUntilNodeIsEmpty blocks until the node has 0 documents

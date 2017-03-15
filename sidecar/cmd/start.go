@@ -14,15 +14,16 @@ import (
 )
 
 var (
-	apiServerHost   string
-	namespace       string
-	podName         string
-	roles           []util.Role
-	plugins         []v1.ElasticsearchClusterPlugin
-	statefulSetName string
+	apiServerHost                  string
+	namespace                      string
+	podName                        string
+	roles                          []util.Role
+	plugins                        []v1.ElasticsearchClusterPlugin
+	controllerName, controllerKind string
 
 	esSidecarUsername = "_sidecar"
 	esSidecarPassword string
+	clusterUrl        string
 
 	pluginsFlag []string
 	rolesFlag   []string
@@ -45,13 +46,20 @@ var (
 				log.Fatalf("error creating kubernetes client: %s", err.Error())
 			}
 
+			managerOpts, err := manager.NewOptions(
+				manager.SetControllerKind(controllerKind),
+				manager.SetControllerName(controllerName),
+				manager.SetPodName(podName),
+				manager.SetNamespace(namespace),
+				manager.SetRoles(roles),
+			)
+
+			if err != nil {
+				log.Fatalf("error constructing manager options: %s", err.Error())
+			}
+
 			m := manager.NewManager(
-				manager.NewOptions(
-					manager.SetStatefulSetName(statefulSetName),
-					manager.SetPodName(podName),
-					manager.SetNamespace(namespace),
-					manager.SetRoles(roles),
-				),
+				managerOpts,
 				kubeClient,
 			)
 
@@ -83,7 +91,15 @@ var (
 				hooks.OnlyRoles(
 					hooks.OnEvent(
 						events.ScaleDownEvent,
-						hooks.DrainShards,
+					),
+					util.RoleData,
+				),
+			)
+
+			m.RegisterHooks(manager.PhasePostStop,
+				hooks.OnlyRoles(
+					hooks.OnEvent(
+						events.ScaleDownEvent,
 						hooks.AcceptShards,
 					),
 					util.RoleData,
@@ -154,7 +170,9 @@ func init() {
 	startCmd.PersistentFlags().StringVar(&apiServerHost, "apiServerHost", "", "Kubernetes apiserver host address (overrides autodetection)")
 	startCmd.PersistentFlags().StringSliceVarP(&pluginsFlag, "plugins", "p", []string{}, "List of Elasticsearch plugins to install")
 	startCmd.PersistentFlags().StringSliceVarP(&rolesFlag, "roles", "r", []string{}, "The role of this Elasticsearch node")
-	startCmd.PersistentFlags().StringVar(&statefulSetName, "statefulSetName", "", "Name of the StatefulSet managing data nodes")
+	startCmd.PersistentFlags().StringVar(&controllerName, "controllerName", "", "Name of the controller managing this node")
+	startCmd.PersistentFlags().StringVar(&controllerKind, "controllerKind", "", "Kind of the controller managing this node")
+	startCmd.PersistentFlags().StringVar(&clusterUrl, "clusterUrl", "", "URL for communicating with Elasticsearch client nodes")
 	startCmd.PersistentFlags().StringVar(&esSidecarPassword, "sidecarUserPassword", "insecure", "The password to use for the sidecars ElasticSearch user account")
 
 	rootCmd.AddCommand(startCmd)
