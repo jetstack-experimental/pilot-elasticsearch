@@ -4,6 +4,8 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"gitlab.jetstack.net/marshal/colonel/pkg/api/v1"
+
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks/events"
@@ -15,17 +17,28 @@ var (
 	apiServerHost   string
 	namespace       string
 	podName         string
-	role            = &util.RoleVar{}
-	plugins         []string
+	roles           []util.Role
+	plugins         []v1.ElasticsearchClusterPlugin
 	statefulSetName string
 
 	esSidecarUsername = "_sidecar"
 	esSidecarPassword string
 
+	pluginsFlag []string
+	rolesFlag   []string
+
 	startCmd = &cobra.Command{
 		Use:   "start",
 		Short: "starts the elasticsearch lieutenant",
 		Run: func(cmd *cobra.Command, args []string) {
+			if err := parsePluginsFlag(); err != nil {
+				log.Fatalf("error parsing plugins list: %s", err.Error())
+			}
+
+			if err := parseRolesFlag(); err != nil {
+				log.Fatalf("error parsing roles list: %s", err.Error())
+			}
+
 			kubeClient, err := util.NewKubernetesClient(apiServerHost)
 
 			if err != nil {
@@ -37,7 +50,7 @@ var (
 					manager.SetStatefulSetName(statefulSetName),
 					manager.SetPodName(podName),
 					manager.SetNamespace(namespace),
-					manager.SetRole(util.Role(role.String())),
+					manager.SetRoles(roles),
 				),
 				kubeClient,
 			)
@@ -96,13 +109,51 @@ var (
 	}
 )
 
+func parsePluginsFlag() error {
+	if len(pluginsFlag) == 0 {
+		return nil
+	}
+
+	if len(pluginsFlag) == 1 && pluginsFlag[0] == "" {
+		return nil
+	}
+
+	pl := make([]v1.ElasticsearchClusterPlugin, len(pluginsFlag))
+	for i, plugin := range pluginsFlag {
+		pl[i] = v1.ElasticsearchClusterPlugin{
+			Name: plugin,
+		}
+	}
+
+	plugins = pl
+	return nil
+}
+
+func parseRolesFlag() error {
+	if len(rolesFlag) == 0 {
+
+	}
+
+	if len(rolesFlag) == 1 && rolesFlag[0] == "" {
+		return nil
+	}
+
+	r := make([]util.Role, len(rolesFlag))
+	for i, role := range rolesFlag {
+		r[i] = util.Role(role)
+	}
+
+	roles = r
+	return nil
+}
+
 func init() {
 	// StartCmd flags
 	startCmd.PersistentFlags().StringVar(&podName, "podName", "", "The name of this pod")
 	startCmd.PersistentFlags().StringVar(&namespace, "namespace", "", "The namespace this node is running in")
 	startCmd.PersistentFlags().StringVar(&apiServerHost, "apiServerHost", "", "Kubernetes apiserver host address (overrides autodetection)")
-	startCmd.PersistentFlags().StringSliceVarP(&plugins, "plugins", "p", []string{}, "List of Elasticsearch plugins to install")
-	startCmd.PersistentFlags().VarP(role, "role", "r", "The role of this Elasticsearch node")
+	startCmd.PersistentFlags().StringSliceVarP(&pluginsFlag, "plugins", "p", []string{}, "List of Elasticsearch plugins to install")
+	startCmd.PersistentFlags().StringSliceVarP(&rolesFlag, "roles", "r", []string{}, "The role of this Elasticsearch node")
 	startCmd.PersistentFlags().StringVar(&statefulSetName, "statefulSetName", "", "Name of the StatefulSet managing data nodes")
 	startCmd.PersistentFlags().StringVar(&esSidecarPassword, "sidecarUserPassword", "insecure", "The password to use for the sidecars ElasticSearch user account")
 

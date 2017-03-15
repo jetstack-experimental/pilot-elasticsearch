@@ -17,7 +17,6 @@ func NewKubernetesClient(apiServerHost string) (*kubernetes.Clientset, error) {
 	var cfg *rest.Config
 
 	if len(apiServerHost) > 0 {
-		cfg = new(rest.Config)
 		cfg.Host = apiServerHost
 	} else if cfg, err = rest.InClusterConfig(); err != nil {
 		apiCfg, err := clientcmd.NewDefaultClientConfigLoadingRules().Load()
