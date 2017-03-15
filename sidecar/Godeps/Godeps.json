@@ -219,7 +219,7 @@
 		},
 		{
 			"ImportPath": "gitlab.jetstack.net/marshal/colonel/pkg/api/v1",
-			"Rev": "be51e43b616d0f8379519e8c10943359f5945622"
+			"Rev": "38e0af09cb589088a1b0f899ae5be123028be2eb"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
@@ -254,7 +254,35 @@
 			"Rev": "d75a52659825e75fff6158388dddc6a5b04f9ba5"
 		},
 		{
+			"ImportPath": "golang.org/x/text/cases",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/internal/tag",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/language",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/runes",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/secure/bidirule",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/secure/precis",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
 			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/bidi",
 			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
 		},
 		{
