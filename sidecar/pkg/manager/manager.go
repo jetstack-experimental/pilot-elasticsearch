@@ -3,7 +3,6 @@ package manager
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"k8s.io/client-go/kubernetes"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/es"
@@ -101,6 +101,8 @@ func (m *Manager) BuildRequest(method, path, query string, body io.Reader) (*htt
 		Path:     path,
 	}
 
+	log.Debugf("created request: %s", builtURL.String())
+
 	if m.Options().SidecarUsername() != "" {
 		builtURL.User = url.UserPassword(m.Options().SidecarUsername(), m.Options().SidecarPassword())
 	}
@@ -135,27 +137,30 @@ func (m *Manager) Run() error {
 	m.esCmd = exec.Command(m.Options().ElasticsearchBin())
 	m.esCmd.Stdout = os.Stdout
 	m.esCmd.Stderr = os.Stderr
-	m.esCmd.Env = append(os.Environ(), es.Env(m.Options().Role())...)
+	m.esCmd.Env = append(os.Environ(), es.Env(m.Options().Roles())...)
 
 	go m.handleSignals()
 	go m.firePostStart()
 
+	log.Debugf("starting elasticsearch...")
 	return m.esCmd.Run()
 }
 
 // Shutdown will handle a shutdown signal. It will block until it is safe to shut
 // down this node and will fire preStop and postStop hooks.
 func (m *Manager) Shutdown() error {
+	log.Infof("initiating shutdown...")
 	defer os.Exit(1)
 	if err := m.transitionPhase(PhasePreStop); err != nil {
 		return fmt.Errorf("error running lieutenant pre stop hooks: %s", err.Error())
 	}
 
 	if m.esCmd != nil {
+		log.Debugf("sending SIGTERM to elasticsearch process")
 		m.esCmd.Process.Signal(syscall.SIGTERM)
+		log.Debugf("waiting for elasticsearch process to exit...")
 		state, err := m.esCmd.Process.Wait()
 
-		// we'll skip this error so that postStop hooks are fired
 		if err != nil {
 			return fmt.Errorf("elasticsearch exited with error: %s", err.Error())
 		}
@@ -176,6 +181,7 @@ func (m *Manager) Shutdown() error {
 // and then fire the postStart hooks
 func (m *Manager) firePostStart() {
 	for {
+		log.Debugf("waiting for port 9200 before executing post-start hook...")
 		if m.listening() {
 			break
 		}
@@ -203,14 +209,19 @@ func (m *Manager) listening() bool {
 
 // transitionPhase will fire all hooks for the given Phase p
 func (m *Manager) transitionPhase(p Phase) error {
+	log.Debugf("transitioning to phase '%s'", p)
 	m.hookLock.RLock()
 	defer m.hookLock.RUnlock()
 	if hooks, ok := m.hooks[p]; ok {
+		log.Debugf("executing %d '%s' hooks", len(hooks), p)
 		for _, h := range hooks {
+			log.Debugf("executing hook...")
 			err := h(m)
 
 			if err != nil {
-				return fmt.Errorf("error running hook for phase '%s': %s", p, err.Error())
+				err = fmt.Errorf("error running hook for phase '%s': %s", p, err.Error())
+				log.Warnf(err.Error())
+				return err
 			}
 		}
 	}
@@ -235,7 +246,8 @@ func (m *Manager) handleSignals() {
 		syscall.SIGINT,
 	)
 
-	for _ = range sigChan {
+	for sig := range sigChan {
+		log.Debugf("got signal: '%s'", sig.String())
 		defer os.Exit(1)
 		if err := m.Shutdown(); err != nil {
 			log.Fatalf("error shutting down: %s", err.Error())

@@ -3,11 +3,12 @@ package hooks
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/olivere/elastic"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
@@ -59,7 +60,7 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 			fmt.Sprintf(`
 			{
 				"transient": {
-					"cluster.routing.allocation.exclude._name": "%s"
+					"cluster.routing.allocation.exclude._host": "%s"
 				}	
 			}`, s),
 		),
@@ -91,7 +92,7 @@ func nodeShouldBeRemovedFromCluster(m manager.Interface) (bool, error) {
 		return false, fmt.Errorf("error parsing node index: %s", err.Error())
 	}
 
-	ps, err := m.KubeClient().Apps().StatefulSets(m.Options().Namespace()).Get(m.Options().StatefulSetName())
+	ps, err := m.KubeClient().Apps().StatefulSets(m.Options().Namespace()).Get(m.Options().StatefulSetName(), metav1.GetOptions{})
 
 	if err != nil {
 		return false, fmt.Errorf("error getting statefulset: %s", err.Error())
@@ -103,12 +104,14 @@ func nodeShouldBeRemovedFromCluster(m manager.Interface) (bool, error) {
 // waitUntilNodeIsEmpty blocks until the node has 0 documents
 func waitUntilNodeIsEmpty(m manager.Interface) error {
 	for {
+		log.Debugf("waiting until node is empty...")
 		empty, err := nodeIsEmpty(m)
 
 		if err != nil {
 			return fmt.Errorf("error waiting for node to be empty: %s", err.Error())
 		}
 
+		log.Debugf("node is empty: %t", empty)
 		if empty {
 			return nil
 		}
@@ -144,6 +147,7 @@ func nodeIsEmpty(m manager.Interface) (bool, error) {
 	}
 
 	for _, n := range nodesStatsResponse.Nodes {
+		log.Debugf("node '%s' has %d documents", n.Name, n.Indices.Docs.Count)
 		if n.Name == m.Options().PodName() {
 			return n.Indices.Docs.Count == 0, nil
 		}

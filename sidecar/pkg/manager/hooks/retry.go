@@ -15,6 +15,7 @@ func Retry(h manager.Hook, period time.Duration, retries int) manager.Hook {
 	return func(m manager.Interface) error {
 		var err error
 		for i := 0; i < retries; i++ {
+			log.Debugf("attempting to executing hook...")
 			err = h(m)
 
 			if err != nil {

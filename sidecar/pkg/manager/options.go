@@ -14,7 +14,7 @@ type kubernetesOptions interface {
 
 type elasticsearchOptions interface {
 	// Role returns the role of this node in the cluster
-	Role() util.Role
+	Roles() []util.Role
 	// PluginsBin returns the path to the elasticsearch plugins binary
 	PluginsBin() string
 	// ElasticsearchBin returns the path to the elasticsearch binary
@@ -43,7 +43,7 @@ type optionsImpl struct {
 	statefulSetName  string
 	podName          string
 	namespace        string
-	role             util.Role
+	roles            []util.Role
 	pluginsBin       string
 	elasticsearchBin string
 	sidecarUsername  string
@@ -55,7 +55,7 @@ var _ Options = &optionsImpl{}
 func (o *optionsImpl) StatefulSetName() string { return o.statefulSetName }
 func (o *optionsImpl) PodName() string         { return o.podName }
 func (o *optionsImpl) Namespace() string       { return o.namespace }
-func (o *optionsImpl) Role() util.Role         { return o.role }
+func (o *optionsImpl) Roles() []util.Role      { return o.roles }
 func (o *optionsImpl) PluginsBin() string {
 	if len(o.pluginsBin) > 0 {
 		return o.pluginsBin
@@ -91,9 +91,9 @@ func SetNamespace(s string) optionsFn {
 	}
 }
 
-func SetRole(s util.Role) optionsFn {
+func SetRoles(s []util.Role) optionsFn {
 	return func(o *optionsImpl) {
-		o.role = s
+		o.roles = s
 	}
 }
 
