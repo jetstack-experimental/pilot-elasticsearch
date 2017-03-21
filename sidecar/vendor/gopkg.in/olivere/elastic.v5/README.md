@@ -115,7 +115,6 @@ ctx := context.Background()
 client, err := elastic.NewClient()
 if err != nil {
     // Handle error
-    panic(err)
 }
 
 // Create an index

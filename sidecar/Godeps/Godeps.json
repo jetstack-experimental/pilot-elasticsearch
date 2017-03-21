@@ -172,11 +172,6 @@
 			"Rev": "bfdb1a85537d60bc7e954e600c250219ea497417"
 		},
 		{
-			"ImportPath": "github.com/olivere/elastic",
-			"Comment": "v5.0.28-2-g49d3757",
-			"Rev": "49d3757cdd2c7d55e669a17de8334f69fef3f568"
-		},
-		{
 			"ImportPath": "github.com/pelletier/go-buffruneio",
 			"Rev": "df1e16fde7fc330a0ca68167c23bf7ed6ac31d6d"
 		},
@@ -297,6 +292,11 @@
 			"ImportPath": "gopkg.in/inf.v0",
 			"Comment": "v0.9.0",
 			"Rev": "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v5",
+			"Comment": "v5.0.28",
+			"Rev": "89b2f0f27bbe09ff5ee27cb6f4422cb2d89c6be8"
 		},
 		{
 			"ImportPath": "gopkg.in/olivere/elastic.v5/uritemplates",
