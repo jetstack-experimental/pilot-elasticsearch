@@ -21,7 +21,7 @@ test:helm:
   - docker
   script:
   # Grab helm
-  - apk add --no-cache openssl
+  - apk add --no-cache openssl make
   - HELM_URL=https://storage.googleapis.com/kubernetes-helm
   - HELM_TARBALL=helm-canary-linux-amd64.tar.gz
   - wget -q ${HELM_URL}/${HELM_TARBALL}
