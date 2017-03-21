@@ -17,33 +17,17 @@ import (
 func DrainShards(m manager.Interface) error {
 	log.Infof("draining shards from node...")
 
-	cl, err := m.Client()
-	if err != nil {
-		return err
-	}
-
-	resp, err := cl.NodesInfo().NodeId("_local").Do(context.TODO())
+	// exclude this node from being allocated shards
+	err := setExcludeAllocation(m, m.Options().PodName())
 
 	if err != nil {
-		return fmt.Errorf("error getting node info: %s", err.Error())
+		// TODO: retry?
+		return fmt.Errorf("error removing node from cluster: %s", err.Error())
 	}
 
-	log.Debugf("got %d nodes in _local request", len(resp.Nodes))
-	for id := range resp.Nodes {
-		// exclude this node from being allocated shards
-		err := setExcludeAllocation(m, id)
+	log.Debugf("successfully excluded shard allocation for node '%s'", m.Options().PodName())
 
-		if err != nil {
-			// TODO: retry?
-			return fmt.Errorf("error removing node from cluster: %s", err.Error())
-		}
-
-		log.Debugf("successfully excluded shard allocation for node id '%s'", id)
-
-		return waitUntilNodeIsEmpty(m)
-	}
-
-	return fmt.Errorf("local node not found")
+	return waitUntilNodeIsEmpty(m)
 }
 
 // AcceptShards clears the cluster.routing.allocation.exclude._name key in the
@@ -55,7 +39,7 @@ func AcceptShards(m manager.Interface) error {
 
 // setExcludeAllocation sets the cluster.routing.allocation.exclude._name key
 func setExcludeAllocation(m manager.Interface, s string) error {
-	log.Debugf("excluding shard allocation for node id '%s'", s)
+	log.Debugf("excluding shard allocation for node '%s'", s)
 	req, err := m.BuildRequest(
 		"PUT",
 		"/_cluster/settings",
@@ -65,7 +49,7 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 			fmt.Sprintf(`
 			{
 				"transient": {
-					"cluster.routing.allocation.exclude._id": "%s"
+					"cluster.routing.allocation.exclude._name": "%s"
 				}	
 			}`, s),
 		),
@@ -74,6 +58,8 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 	if err != nil {
 		return fmt.Errorf("error constructing request: %s", err.Error())
 	}
+
+	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := m.ESClient().Do(req)
 
