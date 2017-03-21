@@ -13,18 +13,41 @@ spec:
   template:
     metadata:
       labels:
-        app: kibana
+        app: {{ template "fullname" . }}-kibana
+        chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+        release: "{{ .Release.Name }}"
+        heritage: "{{ .Release.Service }}"
+        role: kibana
     spec:
       containers:
       - name: kibana
         image: docker.elastic.co/kibana/kibana:5.2.2
-        env:
-        - name: ELASTICSEARCH_URL
-          value: http://{{ template "fullname" . }}:9200
-        - name: ELASTICSEARCH_USERNAME
-          value: elastic
-        - name: ELASTICSEARCH_PASSWORD
-          value: changeme
+        command:
+        - /usr/share/kibana/bin/kibana
         ports:
         - name: http
           containerPort: 5601
+        volumeMounts:
+        - name: config
+          mountPath: /usr/share/kibana/config
+      volumes:
+      - name: config
+        configMap:
+          name: {{ template "fullname" . }}-kibana
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "fullname" . }}-kibana
+  labels:
+    app: {{ template "fullname" . }}-kibana
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+    role: kibana
+data:
+  kibana.yml: |
+    server.name: kibana
+    server.host: "0"
+    elasticsearch.url: http://{{ template "fullname" . }}:9200
+    xpack.monitoring.ui.container.elasticsearch.enabled: true

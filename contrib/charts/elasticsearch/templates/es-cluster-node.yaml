@@ -1,0 +1,157 @@
+{{- range $nodePool := .Values.nodePools }}
+{{- if $nodePool.state.stateful }}
+apiVersion: apps/v1beta1
+kind: StatefulSet
+{{- else }}
+apiVersion: extensions/v1beta1
+kind: Deployment
+{{- end}}
+metadata:
+  name: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
+{{- if $nodePool.ownerReferences }}
+  ownerReferences:
+{{ toYaml $nodePool.ownerReferences | indent 4 }}
+{{- end }}
+  labels:
+    app: {{ template "fullname" $ }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    nodePool: {{ $nodePool.name | quote }}
+    client: "true"
+    master: "true"
+    data: "true"
+# {{- range $role := $nodePool.roles }}
+#     {{ $role }}: "true"
+# {{- end }}
+spec:
+  replicas: {{ $nodePool.replicas }}
+  template:
+    metadata:
+      annotations:
+        # TODO: does not support >1 sysctl option
+        pod.beta.kubernetes.io/init-containers: '[
+          {{- range $sysctl := $.Values.sysctl }}
+          {
+            "name": "tune-sysctl",
+            "image": "busybox",
+            "imagePullPolicy": "IfNotPresent",
+            "securityContext": {
+              "privileged": true
+            },
+            "command": [
+              "sysctl",
+              "-w",
+              "{{ $sysctl }}"
+            ]
+          }
+          {{- end }}
+        ]'
+      labels:
+        app: {{ template "fullname" $ }}
+        chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+        release: "{{ $.Release.Name }}"
+        heritage: "{{ $.Release.Service }}"
+        nodePool: {{ $nodePool.name | quote }}
+        client: "true"
+        master: "true"
+        data: "true"
+# {{- range $role := $nodePool.roles }}
+#         {{ $role }}: "true"
+# {{- end }}
+    spec:
+      terminationGracePeriodSeconds: 1800
+      serviceAccount: "{{ template "fullname" $ }}"
+      serviceAccountName: "{{ template "fullname" $ }}"
+      securityContext:
+        fsGroup: {{ $.Values.image.fsGroup }}
+      containers:
+      - name: elasticsearch
+        image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
+        imagePullPolicy: {{ $.Values.image.pullPolicy | quote }}
+        args:
+        - start
+        - --roles=["data","client","master"]
+        - --clusterURL=http://{{ template "fullname" $ }}:9200
+        - --controllerName="{{ template "fullname" $ }}-{{ $nodePool.name }}"
+{{- if $nodePool.state.stateful }}
+        - --controllerKind=StatefulSet
+{{- else }}
+        - --controllerKind=Deployment
+{{- end }}
+        env:
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: DISCOVERY_HOST
+          value: {{ template "fullname" $ }}-masters
+        - name: CONTROLLER_KIND
+{{- if $nodePool.state.stateful }}
+          value: StatefulSet
+{{- else }}
+          value: Deployment
+{{- end }}
+        readinessProbe:
+          httpGet:
+            port: 12001
+            path: /
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          timeoutSeconds: 5
+        livenessProbe:
+          httpGet:
+            port: 12000
+            path: /
+          initialDelaySeconds: 30
+          periodSeconds: 2
+          timeoutSeconds: 5
+        securityContext:
+          capabilities:
+            add:
+            - IPC_LOCK
+        resources:
+{{ toYaml $nodePool.resources | indent 10 }}
+        ports:
+        - name: transport
+          containerPort: 9300
+        - name: http
+          containerPort: 9200
+        volumeMounts:
+        - name: elasticsearch-data
+          mountPath: /usr/share/elasticsearch/data
+          readOnly: false
+        - name: sidecar-config
+          mountPath: /config
+          readOnly: true
+      volumes:
+      - name: sidecar-config
+        configMap:
+          name: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
+{{- if not $nodePool.state.persistence.enabled }}
+      - name: elasticsearch-data
+        emptyDir: {}
+{{- else }}
+{{- if $nodePool.state.stateful }}
+  serviceName: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
+  volumeClaimTemplates:
+  - metadata:
+      name: elasticsearch-data
+      annotations:
+      {{- if $nodePool.state.persistence.storageClass }}
+        volume.beta.kubernetes.io/storage-class: {{ $nodePool.state.persistence.storageClass | quote }}
+      {{- end }}
+    spec:
+      accessModes:
+      - ReadWriteOnce
+      resources:
+        requests:
+          storage: {{ $nodePool.state.persistence.size | quote }}
+{{- end }}
+{{- end }}
+---
+{{- end }}

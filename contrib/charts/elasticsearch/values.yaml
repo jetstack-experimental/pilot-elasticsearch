@@ -2,56 +2,104 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-elasticsearch:
-  plugins: "io.fabric8:elasticsearch-cloud-kubernetes:5.2.0"
-  # NOTE: DO NOT SPECIFY MORE THAN ONE SYSCTL FOR NOW
-  sysctl:
-  - vm.max_map_count=262144
+version: '5.2.2'
+plugins:
+- name: "io.fabric8:elasticsearch-cloud-kubernetes:5.2.2"
+
+# NOTE: DO NOT SPECIFY MORE THAN ONE SYSCTL FOR NOW
+sysctl:
+- vm.max_map_count=262144
 
 image:
   repository: munnerz/elasticsearch-k8s
   tag: lieutenant
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   ## This sets the group of the persistent volume created for
   ## the data nodes. This must be the same as the user that elasticsearch
   ## runs as within the container.
   fsGroup: 1000
 
-client:
-  replicaCount: 2
+nodePools:
+- name: data
+  replicas: 1
+
+  roles:
+  - data
+
   resources:
     requests:
       cpu: 1
-      memory: 4Gi
+      memory: 2Gi
     limits:
       cpu: 2
       memory: 4Gi
 
-data:
-  replicaCount: 2
+  state:
+    # stateful defines whether to create a StatefulSet or a Deployment
+    stateful: false
+
+    # persistent sets persistent storage config
+    persistence:
+      # enabled will only have an effect if stateful is also true. If true,
+      # the persistentVolumeClaims block of the StatefulSet will be set
+      enabled: false
+      # size of the volume
+      size: 10Gi
+      # storageClass of the volume
+      storageClass: "fast"
+
+- name: client
+  replicas: 1
+
+  roles:
+  - client
+
   resources:
     requests:
       cpu: 1
-      memory: 4Gi
+      memory: 2Gi
     limits:
       cpu: 2
       memory: 4Gi
 
-  persistentVolume:
-    ## Set to false to disable persisting data (uses an emptyDir) in place
-    ## of persistent volume claims
-    enabled: false
-    ## If persistence is enabled, specify the storageClass to use here
-    # storageClass: fast
-    ## The size of the persistent volume
-    size: 10Gi
+  state:
+    # stateful defines whether to create a StatefulSet or a Deployment
+    stateful: false
 
-master:
-  replicaCount: 3
+    # persistent sets persistent storage config
+    persistence:
+      # enabled will only have an effect if stateful is also true. If true,
+      # the persistentVolumeClaims block of the StatefulSet will be set
+      enabled: false
+      # size of the volume
+      size: 10Gi
+      # storageClass of the volume
+      storageClass: "fast"
+
+- name: master
+  replicas: 1
+
+  roles:
+  - master
+
   resources:
     requests:
       cpu: 1
-      memory: 4Gi
+      memory: 2Gi
     limits:
       cpu: 2
       memory: 4Gi
+
+  state:
+    # stateful defines whether to create a StatefulSet or a Deployment
+    stateful: false
+
+    # persistent sets persistent storage config
+    persistence:
+      # enabled will only have an effect if stateful is also true. If true,
+      # the persistentVolumeClaims block of the StatefulSet will be set
+      enabled: false
+      # size of the volume
+      size: 10Gi
+      # storageClass of the volume
+      storageClass: "fast"

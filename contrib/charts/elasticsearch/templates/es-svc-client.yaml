@@ -3,20 +3,21 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "fullname" . }}-cluster
+  name: {{ template "fullname" . }}
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
 spec:
-  clusterIP: None
+  type: ClusterIP
   ports:
-  - name: transport
-    port: 9300
-    targetPort: 9300
+  - name: http
+    port: 9200
+    targetPort: 9200
   selector:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
+    client: "true"
