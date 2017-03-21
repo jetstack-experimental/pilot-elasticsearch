@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"encoding/json"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 
@@ -14,18 +16,19 @@ import (
 )
 
 var (
-	apiServerHost   string
-	namespace       string
-	podName         string
-	roles           []util.Role
-	plugins         []v1.ElasticsearchClusterPlugin
-	statefulSetName string
+	apiServerHost                  string
+	namespace                      string
+	podName                        string
+	roles                          []util.Role
+	plugins                        []v1.ElasticsearchClusterPlugin
+	controllerName, controllerKind string
 
 	esSidecarUsername = "_sidecar"
 	esSidecarPassword string
+	clusterURL        string
 
-	pluginsFlag []string
-	rolesFlag   []string
+	pluginsFlag string
+	rolesFlag   string
 
 	startCmd = &cobra.Command{
 		Use:   "start",
@@ -45,13 +48,21 @@ var (
 				log.Fatalf("error creating kubernetes client: %s", err.Error())
 			}
 
+			managerOpts, err := manager.NewOptions(
+				manager.SetControllerKind(controllerKind),
+				manager.SetControllerName(controllerName),
+				manager.SetPodName(podName),
+				manager.SetNamespace(namespace),
+				manager.SetRoles(roles),
+				manager.SetClusterURL(clusterURL),
+			)
+
+			if err != nil {
+				log.Fatalf("error constructing manager options: %s", err.Error())
+			}
+
 			m := manager.NewManager(
-				manager.NewOptions(
-					manager.SetStatefulSetName(statefulSetName),
-					manager.SetPodName(podName),
-					manager.SetNamespace(namespace),
-					manager.SetRoles(roles),
-				),
+				managerOpts,
 				kubeClient,
 			)
 
@@ -76,15 +87,18 @@ var (
 			// 	),
 			// )
 
-			// Run DrainShards followed by AcceptShards.
-			// TODO: work out a way to run AcceptShards as a postStop hook by talking
-			// to the other nodes in cluster
+			m.RegisterHooks(manager.PhasePostStart,
+				hooks.OnlyRoles(
+					hooks.AcceptShards,
+					util.RoleData,
+				),
+			)
+
 			m.RegisterHooks(manager.PhasePreStop,
 				hooks.OnlyRoles(
 					hooks.OnEvent(
 						events.ScaleDownEvent,
 						hooks.DrainShards,
-						hooks.AcceptShards,
 					),
 					util.RoleData,
 				),
@@ -102,6 +116,9 @@ var (
 				Check: m.LivenessCheck(),
 			}).Listen()
 
+			// TODO: Once the ES process is exited, we're immediately exiting the main process
+			// without allowing time for postStop hooks to run. We should block until postStop hooks
+			// are complete
 			if err := m.Run(); err != nil {
 				log.Fatalf("error running elasticsearch: %s", err.Error())
 			}
@@ -113,38 +130,14 @@ func parsePluginsFlag() error {
 	if len(pluginsFlag) == 0 {
 		return nil
 	}
-
-	if len(pluginsFlag) == 1 && pluginsFlag[0] == "" {
-		return nil
-	}
-
-	pl := make([]v1.ElasticsearchClusterPlugin, len(pluginsFlag))
-	for i, plugin := range pluginsFlag {
-		pl[i] = v1.ElasticsearchClusterPlugin{
-			Name: plugin,
-		}
-	}
-
-	plugins = pl
-	return nil
+	return json.Unmarshal([]byte(pluginsFlag), &plugins)
 }
 
 func parseRolesFlag() error {
 	if len(rolesFlag) == 0 {
-
-	}
-
-	if len(rolesFlag) == 1 && rolesFlag[0] == "" {
 		return nil
 	}
-
-	r := make([]util.Role, len(rolesFlag))
-	for i, role := range rolesFlag {
-		r[i] = util.Role(role)
-	}
-
-	roles = r
-	return nil
+	return json.Unmarshal([]byte(rolesFlag), &roles)
 }
 
 func init() {
@@ -152,9 +145,11 @@ func init() {
 	startCmd.PersistentFlags().StringVar(&podName, "podName", "", "The name of this pod")
 	startCmd.PersistentFlags().StringVar(&namespace, "namespace", "", "The namespace this node is running in")
 	startCmd.PersistentFlags().StringVar(&apiServerHost, "apiServerHost", "", "Kubernetes apiserver host address (overrides autodetection)")
-	startCmd.PersistentFlags().StringSliceVarP(&pluginsFlag, "plugins", "p", []string{}, "List of Elasticsearch plugins to install")
-	startCmd.PersistentFlags().StringSliceVarP(&rolesFlag, "roles", "r", []string{}, "The role of this Elasticsearch node")
-	startCmd.PersistentFlags().StringVar(&statefulSetName, "statefulSetName", "", "Name of the StatefulSet managing data nodes")
+	startCmd.PersistentFlags().StringVarP(&pluginsFlag, "plugins", "p", "[]", "List of Elasticsearch plugins to install")
+	startCmd.PersistentFlags().StringVarP(&rolesFlag, "roles", "r", `["client"]`, "The role of this Elasticsearch node")
+	startCmd.PersistentFlags().StringVar(&controllerName, "controllerName", "", "Name of the controller managing this node")
+	startCmd.PersistentFlags().StringVar(&controllerKind, "controllerKind", "", "Kind of the controller managing this node")
+	startCmd.PersistentFlags().StringVar(&clusterURL, "clusterURL", "", "URL for communicating with Elasticsearch client nodes")
 	startCmd.PersistentFlags().StringVar(&esSidecarPassword, "sidecarUserPassword", "insecure", "The password to use for the sidecars ElasticSearch user account")
 
 	rootCmd.AddCommand(startCmd)

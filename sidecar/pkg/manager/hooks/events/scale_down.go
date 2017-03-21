@@ -11,18 +11,34 @@ import (
 
 // ScaleDown will return true if this pod is shutting down as part of a
 // StatefulSet scale down event.
-func ScaleDown(cl *kubernetes.Clientset, namespace, statefulSetName, podName string) (bool, error) {
+func ScaleDown(cl *kubernetes.Clientset, namespace, controllerKind, controllerName, podName string) (bool, error) {
 	nodeIndex, err := util.NodeIndex(podName)
 
 	if err != nil {
 		return false, fmt.Errorf("error parsing node index: %s", err.Error())
 	}
 
-	ps, err := cl.Apps().StatefulSets(namespace).Get(statefulSetName, metav1.GetOptions{})
+	var desiredReplicas int
+	switch controllerKind {
+	case "StatefulSet":
+		ps, err := cl.Apps().StatefulSets(namespace).Get(controllerName, metav1.GetOptions{})
 
-	if err != nil {
-		return false, fmt.Errorf("error getting statefulset: %s", err.Error())
+		if err != nil {
+			return false, fmt.Errorf("error getting statefulset '%s': %s", controllerName, err.Error())
+		}
+
+		desiredReplicas = int(*ps.Spec.Replicas)
+	case "Deployment":
+		ps, err := cl.Extensions().Deployments(namespace).Get(controllerName, metav1.GetOptions{})
+
+		if err != nil {
+			return false, fmt.Errorf("error getting deployment '%s': %s", controllerName, err.Error())
+		}
+
+		desiredReplicas = int(*ps.Spec.Replicas)
+	default:
+		return false, fmt.Errorf("invalid controller kind specified: '%s'", controllerKind)
 	}
 
-	return nodeIndex >= int(*ps.Spec.Replicas), nil
+	return nodeIndex >= desiredReplicas, nil
 }

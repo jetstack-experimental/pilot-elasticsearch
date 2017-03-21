@@ -14,6 +14,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"gopkg.in/olivere/elastic.v5"
 	"k8s.io/client-go/kubernetes"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/es"
@@ -27,6 +28,8 @@ const (
 
 // Interface describes a manager for an Elasticsearch process
 type Interface interface {
+	Client() (*elastic.Client, error)
+
 	// Options returns a set of options for this manager
 	Options() Options
 	// ESClient returns an HTTP client for communicating with Elasticsearch
@@ -55,6 +58,7 @@ var _ Interface = &Manager{}
 
 // Manager is the default implementation of an Elasticsearch process manager
 type Manager struct {
+	esClient   *elastic.Client
 	options    Options
 	kubeClient *kubernetes.Clientset
 
@@ -73,6 +77,20 @@ func NewManager(opts Options, kubeClient *kubernetes.Clientset) Interface {
 		kubeClient: kubeClient,
 		hooks:      make(map[Phase][]Hook),
 	}
+}
+
+func (m *Manager) Client() (*elastic.Client, error) {
+	// TODO: Mutex around the esClient
+	if m.esClient == nil {
+		cl, err := elastic.NewClient(elastic.SetURL("http://127.0.0.1:9200/"))
+
+		if err != nil {
+			return nil, err
+		}
+
+		m.esClient = cl
+	}
+	return m.esClient, nil
 }
 
 // Options returns a set of options for this manager
@@ -95,8 +113,8 @@ func (m *Manager) KubeClient() *kubernetes.Clientset {
 func (m *Manager) BuildRequest(method, path, query string, body io.Reader) (*http.Request, error) {
 	// TODO: refactor scheme & host out of this method
 	builtURL := url.URL{
-		Scheme:   "http",
-		Host:     fmt.Sprintf("%s:%d", esHost, esPort),
+		Scheme:   m.Options().ClusterURL().Scheme,
+		Host:     m.Options().ClusterURL().Host,
 		RawQuery: query,
 		Path:     path,
 	}
@@ -143,7 +161,12 @@ func (m *Manager) Run() error {
 	go m.firePostStart()
 
 	log.Debugf("starting elasticsearch...")
-	return m.esCmd.Run()
+
+	if err := m.esCmd.Start(); err != nil {
+		return fmt.Errorf("error starting elasticsearch: %s", err.Error())
+	}
+
+	return m.esCmd.Wait()
 }
 
 // Shutdown will handle a shutdown signal. It will block until it is safe to shut

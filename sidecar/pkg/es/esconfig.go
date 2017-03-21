@@ -1,6 +1,8 @@
 package es
 
 import (
+	"fmt"
+
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
 )
 
@@ -9,20 +11,20 @@ import (
 // TODO: refactor this into the Manager
 func Env(roles []util.Role) []string {
 	env := []string{
-		"DISCOVERY_PROVIDER=kubernetes",
 		"ES_JAVA_OPTS=-Djava.net.preferIPv4Stack=true",
-	}
-
-	for _, role := range roles {
-		switch role {
-		case util.RoleMaster:
-			env = append(env, "NODE_MASTER=true", "NODE_DATA=false")
-		case util.RoleData:
-			env = append(env, "NODE_DATA=true", "NODE_MASTER=false")
-		case util.RoleClient:
-			env = append(env, "NODE_DATA=false", "NODE_MASTER=false")
-		}
+		fmt.Sprintf("NODE_MASTER=%v", contains(roles, util.RoleMaster)),
+		fmt.Sprintf("NODE_INGEST=%v", contains(roles, util.RoleClient)),
+		fmt.Sprintf("NODE_DATA=%v", contains(roles, util.RoleData)),
 	}
 
 	return env
+}
+
+func contains(roles []util.Role, role util.Role) bool {
+	for _, r := range roles {
+		if r == role {
+			return true
+		}
+	}
+	return false
 }

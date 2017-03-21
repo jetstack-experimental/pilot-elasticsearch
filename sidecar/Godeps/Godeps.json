@@ -172,11 +172,6 @@
 			"Rev": "bfdb1a85537d60bc7e954e600c250219ea497417"
 		},
 		{
-			"ImportPath": "github.com/olivere/elastic",
-			"Comment": "v5.0.28-2-g49d3757",
-			"Rev": "49d3757cdd2c7d55e669a17de8334f69fef3f568"
-		},
-		{
 			"ImportPath": "github.com/pelletier/go-buffruneio",
 			"Rev": "df1e16fde7fc330a0ca68167c23bf7ed6ac31d6d"
 		},
@@ -219,7 +214,7 @@
 		},
 		{
 			"ImportPath": "gitlab.jetstack.net/marshal/colonel/pkg/api/v1",
-			"Rev": "be51e43b616d0f8379519e8c10943359f5945622"
+			"Rev": "38e0af09cb589088a1b0f899ae5be123028be2eb"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",
@@ -254,7 +249,35 @@
 			"Rev": "d75a52659825e75fff6158388dddc6a5b04f9ba5"
 		},
 		{
+			"ImportPath": "golang.org/x/text/cases",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/internal/tag",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/language",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/runes",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/secure/bidirule",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/secure/precis",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
 			"ImportPath": "golang.org/x/text/transform",
+			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
+		},
+		{
+			"ImportPath": "golang.org/x/text/unicode/bidi",
 			"Rev": "06d6eba81293389cafdff7fca90d75592194b2d9"
 		},
 		{
@@ -269,6 +292,11 @@
 			"ImportPath": "gopkg.in/inf.v0",
 			"Comment": "v0.9.0",
 			"Rev": "3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4"
+		},
+		{
+			"ImportPath": "gopkg.in/olivere/elastic.v5",
+			"Comment": "v5.0.28",
+			"Rev": "89b2f0f27bbe09ff5ee27cb6f4422cb2d89c6be8"
 		},
 		{
 			"ImportPath": "gopkg.in/olivere/elastic.v5/uritemplates",

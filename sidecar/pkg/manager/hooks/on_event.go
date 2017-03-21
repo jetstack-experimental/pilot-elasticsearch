@@ -14,7 +14,8 @@ func OnEvent(e events.Event, hs ...manager.Hook) manager.Hook {
 			scaleDown, err := events.ScaleDown(
 				m.KubeClient(),
 				m.Options().Namespace(),
-				m.Options().StatefulSetName(),
+				m.Options().ControllerKind(),
+				m.Options().ControllerName(),
 				m.Options().PodName(),
 			)
 

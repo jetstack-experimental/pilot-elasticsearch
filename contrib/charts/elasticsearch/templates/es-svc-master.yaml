@@ -3,7 +3,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ template "fullname" . }}
+  name: {{ template "fullname" . }}-masters
   labels:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
@@ -12,12 +12,12 @@ metadata:
 spec:
   type: ClusterIP
   ports:
-  - name: http
-    port: 9200
-    targetPort: 9200
+  - name: transport
+    port: 9300
+    targetPort: 9300
   selector:
     app: {{ template "fullname" . }}
     chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
     release: "{{ .Release.Name }}"
     heritage: "{{ .Release.Service }}"
-    role: client
+    master: "true"

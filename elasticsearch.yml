@@ -1,14 +1,16 @@
 node.data: ${NODE_DATA}
 node.master: ${NODE_MASTER}
+node.ingest: ${NODE_INGEST}
 node.name: ${HOSTNAME}
 
 network.host: 0.0.0.0
 
 cloud:
   kubernetes:
-    service: ${SERVICE}
-    namespace: ${KUBERNETES_NAMESPACE}
+    service: ${DISCOVERY_HOST}
+    namespace: ${NAMESPACE}
 
-discovery.zen.hosts_provider: ${DISCOVERY_PROVIDER}
+discovery:
+  type: kubernetes
 
 xpack.security.enabled: false
