@@ -161,7 +161,12 @@ func (m *Manager) Run() error {
 	go m.firePostStart()
 
 	log.Debugf("starting elasticsearch...")
-	return m.esCmd.Run()
+
+	if err := m.esCmd.Start(); err != nil {
+		return fmt.Errorf("error starting elasticsearch: %s", err.Error())
+	}
+
+	return m.esCmd.Wait()
 }
 
 // Shutdown will handle a shutdown signal. It will block until it is safe to shut

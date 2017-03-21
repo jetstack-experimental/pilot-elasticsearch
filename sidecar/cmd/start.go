@@ -87,23 +87,18 @@ var (
 			// 	),
 			// )
 
-			// Run DrainShards followed by AcceptShards.
-			// TODO: work out a way to run AcceptShards as a postStop hook by talking
-			// to the other nodes in cluster
-			m.RegisterHooks(manager.PhasePreStop,
+			m.RegisterHooks(manager.PhasePostStart,
 				hooks.OnlyRoles(
-					hooks.OnEvent(
-						events.ScaleDownEvent,
-					),
+					hooks.AcceptShards,
 					util.RoleData,
 				),
 			)
 
-			m.RegisterHooks(manager.PhasePostStop,
+			m.RegisterHooks(manager.PhasePreStop,
 				hooks.OnlyRoles(
 					hooks.OnEvent(
 						events.ScaleDownEvent,
-						hooks.AcceptShards,
+						hooks.DrainShards,
 					),
 					util.RoleData,
 				),
@@ -121,6 +116,9 @@ var (
 				Check: m.LivenessCheck(),
 			}).Listen()
 
+			// TODO: Once the ES process is exited, we're immediately exiting the main process
+			// without allowing time for postStop hooks to run. We should block until postStop hooks
+			// are complete
 			if err := m.Run(); err != nil {
 				log.Fatalf("error running elasticsearch: %s", err.Error())
 			}

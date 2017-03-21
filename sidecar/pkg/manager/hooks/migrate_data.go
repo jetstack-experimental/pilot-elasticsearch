@@ -1,13 +1,12 @@
 package hooks
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
 	"strings"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/olivere/elastic"
 
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
 )
@@ -18,15 +17,30 @@ import (
 func DrainShards(m manager.Interface) error {
 	log.Infof("draining shards from node...")
 
-	// exclude this node from being allocated shards
-	err := setExcludeAllocation(m, m.Options().PodName())
-
+	cl, err := m.Client()
 	if err != nil {
-		// TODO: retry?
-		return fmt.Errorf("error removing node from cluster: %s", err.Error())
+		return err
 	}
 
-	return waitUntilNodeIsEmpty(m)
+	resp, err := cl.NodesInfo().NodeId("_local").Do(context.TODO())
+
+	if err != nil {
+		return fmt.Errorf("error getting node info: %s", err.Error())
+	}
+
+	for id := range resp.Nodes {
+		// exclude this node from being allocated shards
+		err := setExcludeAllocation(m, id)
+
+		if err != nil {
+			// TODO: retry?
+			return fmt.Errorf("error removing node from cluster: %s", err.Error())
+		}
+
+		return waitUntilNodeIsEmpty(m)
+	}
+
+	return fmt.Errorf("local node not found")
 }
 
 // AcceptShards clears the cluster.routing.allocation.exclude._name key in the
@@ -46,7 +60,7 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 			fmt.Sprintf(`
 			{
 				"transient": {
-					"cluster.routing.allocation.exclude._host": "%s"
+					"cluster.routing.allocation.exclude._id": "%s"
 				}	
 			}`, s),
 		),
@@ -84,42 +98,25 @@ func waitUntilNodeIsEmpty(m manager.Interface) error {
 			return nil
 		}
 
-		time.Sleep(time.Second * 1)
+		time.Sleep(time.Second * 2)
 	}
 }
 
 // nodeIsEmpty returns true if this node contains 0 documents
 func nodeIsEmpty(m manager.Interface) (bool, error) {
-	req, err := m.BuildRequest(
-		"GET",
-		"/_nodes/stats",
-		"",
-		nil,
-	)
+	cl, err := m.Client()
+	if err != nil {
+		return false, err
+	}
+	resp, err := cl.NodesStats().NodeId("_local").Do(context.TODO())
 
 	if err != nil {
-		return false, fmt.Errorf("error constructing request: %s", err.Error())
+		return false, fmt.Errorf("error querying node stats: %s", err.Error())
 	}
 
-	resp, err := m.ESClient().Do(req)
-
-	if err != nil {
-		return false, fmt.Errorf("error getting node stats: %s", err.Error())
+	for _, n := range resp.Nodes {
+		return n.Indices.Docs.Count == 0, nil
 	}
 
-	var nodesStatsResponse elastic.NodesStatsResponse
-	err = json.NewDecoder(resp.Body).Decode(&nodesStatsResponse)
-
-	if err != nil {
-		return false, fmt.Errorf("error decoding response body: %s", err.Error())
-	}
-
-	for _, n := range nodesStatsResponse.Nodes {
-		log.Debugf("node '%s' has %d documents", n.Name, n.Indices.Docs.Count)
-		if n.Name == m.Options().PodName() {
-			return n.Indices.Docs.Count == 0, nil
-		}
-	}
-
-	return false, nil
+	return false, fmt.Errorf("local node not found")
 }
