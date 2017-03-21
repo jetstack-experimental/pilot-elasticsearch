@@ -4,32 +4,17 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"net/url"
-
 	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/probe"
 )
-
-func localNodeURL() (*url.URL, error) {
-	return url.Parse("http://127.0.0.1:9200")
-}
 
 // Check the health of this Elasticsearch node
 func localNodeHealth(m Interface) func() error {
 	return func() error {
-		req, err := m.BuildRequest("GET", "/_cluster/health", "local=true", nil)
+		req, err := m.BuildRequest("GET", "/_cluster/health", "local=true", true, nil)
 
 		if err != nil {
 			return fmt.Errorf("error building health check request: %s", err.Error())
 		}
-
-		url, err := localNodeURL()
-
-		if err != nil {
-			return fmt.Errorf("error build local node URL: %s", err.Error())
-		}
-
-		req.URL.Scheme = url.Scheme
-		req.URL.Host = url.Host
 
 		resp, err := m.ESClient().Do(req)
 

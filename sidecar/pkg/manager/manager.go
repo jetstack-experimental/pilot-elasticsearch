@@ -38,7 +38,7 @@ type Interface interface {
 	// communicate with the clusters apiserver
 	KubeClient() *kubernetes.Clientset
 	// BuildRequest creates a Request type used to talk to Elasticsearch
-	BuildRequest(method, path, query string, body io.Reader) (*http.Request, error)
+	BuildRequest(method, path, query string, local bool, body io.Reader) (*http.Request, error)
 	// RegisterHook will register a hook to execute in a particular phase
 	RegisterHooks(Phase, ...Hook)
 	// Phase returns the current phase of the Elasticsearch process
@@ -110,11 +110,19 @@ func (m *Manager) KubeClient() *kubernetes.Clientset {
 }
 
 // BuildRequest builds an authenticated http.Request for the Elasticsearch cluster
-func (m *Manager) BuildRequest(method, path, query string, body io.Reader) (*http.Request, error) {
+func (m *Manager) BuildRequest(method, path, query string, local bool, body io.Reader) (*http.Request, error) {
 	// TODO: refactor scheme & host out of this method
+	scheme := m.Options().ClusterURL().Scheme
+	host := m.Options().ClusterURL().Host
+
+	if local {
+		scheme = "http"
+		host = "127.0.0.1:9200"
+	}
+
 	builtURL := url.URL{
-		Scheme:   m.Options().ClusterURL().Scheme,
-		Host:     m.Options().ClusterURL().Host,
+		Scheme:   scheme,
+		Host:     host,
 		RawQuery: query,
 		Path:     path,
 	}

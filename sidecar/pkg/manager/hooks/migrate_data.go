@@ -56,6 +56,7 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 		"PUT",
 		"/_cluster/settings",
 		"",
+		true,
 		strings.NewReader(
 			fmt.Sprintf(`
 			{
