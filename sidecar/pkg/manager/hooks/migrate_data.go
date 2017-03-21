@@ -81,6 +81,8 @@ func setExcludeAllocation(m manager.Interface, s string) error {
 		return fmt.Errorf("error performing request: %s", err.Error())
 	}
 
+	defer resp.Body.Close()
+
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		return fmt.Errorf("invalid response code '%d' when removing node from cluster", resp.StatusCode)
 	}

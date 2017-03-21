@@ -56,6 +56,8 @@ func EnsureAccount(user, pass string, roles ...string) manager.Hook {
 			return fmt.Errorf("error creating sidecar user: %s", err.Error())
 		}
 
+		defer resp.Body.Close()
+
 		if resp.StatusCode >= 500 || resp.StatusCode < 200 || (resp.StatusCode >= 300 && resp.StatusCode < 400) {
 			return fmt.Errorf("error creating sidecar user: code %d", resp.StatusCode)
 		}
@@ -86,6 +88,8 @@ func validateUserAccount(m manager.Interface) error {
 	if err != nil {
 		return fmt.Errorf("error validating sidecar user: %s", err.Error())
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode >= 300 || resp.StatusCode < 200 {
 		return fmt.Errorf("error validating sidecar user: code %d", resp.StatusCode)

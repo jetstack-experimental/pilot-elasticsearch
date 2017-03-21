@@ -22,6 +22,8 @@ func localNodeHealth(m Interface) func() error {
 			return fmt.Errorf("error making health check request: %s", err.Error())
 		}
 
+		defer resp.Body.Close()
+
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			var body string
 			if b, err := ioutil.ReadAll(resp.Body); err == nil {
