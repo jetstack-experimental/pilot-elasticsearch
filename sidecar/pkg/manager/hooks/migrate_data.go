@@ -28,6 +28,7 @@ func DrainShards(m manager.Interface) error {
 		return fmt.Errorf("error getting node info: %s", err.Error())
 	}
 
+	log.Debugf("got %d nodes in _local request", len(resp.Nodes))
 	for id := range resp.Nodes {
 		// exclude this node from being allocated shards
 		err := setExcludeAllocation(m, id)
@@ -36,6 +37,8 @@ func DrainShards(m manager.Interface) error {
 			// TODO: retry?
 			return fmt.Errorf("error removing node from cluster: %s", err.Error())
 		}
+
+		log.Debugf("successfully excluded shard allocation for node id '%s'", id)
 
 		return waitUntilNodeIsEmpty(m)
 	}
@@ -52,6 +55,7 @@ func AcceptShards(m manager.Interface) error {
 
 // setExcludeAllocation sets the cluster.routing.allocation.exclude._name key
 func setExcludeAllocation(m manager.Interface, s string) error {
+	log.Debugf("excluding shard allocation for node id '%s'", s)
 	req, err := m.BuildRequest(
 		"PUT",
 		"/_cluster/settings",
