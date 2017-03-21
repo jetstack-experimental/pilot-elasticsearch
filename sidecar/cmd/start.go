@@ -145,7 +145,7 @@ func init() {
 	startCmd.PersistentFlags().StringVar(&podName, "podName", "", "The name of this pod")
 	startCmd.PersistentFlags().StringVar(&namespace, "namespace", "", "The namespace this node is running in")
 	startCmd.PersistentFlags().StringVar(&apiServerHost, "apiServerHost", "", "Kubernetes apiserver host address (overrides autodetection)")
-	startCmd.PersistentFlags().StringVarP(&pluginsFlag, "plugins", "p", "", "List of Elasticsearch plugins to install")
+	startCmd.PersistentFlags().StringVarP(&pluginsFlag, "plugins", "p", "[]", "List of Elasticsearch plugins to install")
 	startCmd.PersistentFlags().StringVarP(&rolesFlag, "roles", "r", `["client"]`, "The role of this Elasticsearch node")
 	startCmd.PersistentFlags().StringVar(&controllerName, "controllerName", "", "Name of the controller managing this node")
 	startCmd.PersistentFlags().StringVar(&controllerKind, "controllerKind", "", "Kind of the controller managing this node")
