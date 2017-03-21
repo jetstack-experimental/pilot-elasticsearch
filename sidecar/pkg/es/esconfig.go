@@ -11,7 +11,7 @@ import (
 // TODO: refactor this into the Manager
 func Env(roles []util.Role) []string {
 	env := []string{
-		"ES_JAVA_OPTS=-Djava.net.preferIPv4Stack=true",
+		"ES_JAVA_OPTS=-Djava.net.preferIPv4Stack=true -Des.cgroups.hierarchy.override=/",
 		fmt.Sprintf("NODE_MASTER=%v", contains(roles, util.RoleMaster)),
 		fmt.Sprintf("NODE_INGEST=%v", contains(roles, util.RoleClient)),
 		fmt.Sprintf("NODE_DATA=%v", contains(roles, util.RoleData)),
