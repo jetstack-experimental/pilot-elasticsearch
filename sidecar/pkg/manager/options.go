@@ -28,8 +28,8 @@ type elasticsearchOptions interface {
 	PluginsBin() string
 	// ElasticsearchBin returns the path to the elasticsearch binary
 	ElasticsearchBin() string
-	// ClusterUrl that can be used to talk to client nodes
-	ClusterUrl() url.URL
+	// ClusterURL that can be used to talk to client nodes
+	ClusterURL() url.URL
 }
 
 type Options interface {
@@ -61,7 +61,7 @@ type optionsImpl struct {
 	elasticsearchBin               string
 	sidecarUsername                string
 	sidecarPassword                string
-	clusterUrl                     url.URL
+	clusterURL                     url.URL
 }
 
 var _ Options = &optionsImpl{}
@@ -85,7 +85,7 @@ func (o *optionsImpl) ElasticsearchBin() string {
 }
 func (o *optionsImpl) SidecarUsername() string { return o.sidecarUsername }
 func (o *optionsImpl) SidecarPassword() string { return o.sidecarPassword }
-func (o *optionsImpl) ClusterUrl() url.URL     { return o.clusterUrl }
+func (o *optionsImpl) ClusterURL() url.URL     { return o.clusterURL }
 
 type optionsFn func(*optionsImpl) error
 
@@ -158,12 +158,12 @@ func SetSidecarPassword(s string) optionsFn {
 	}
 }
 
-func SetClusterUrl(s string) optionsFn {
+func SetClusterURL(s string) optionsFn {
 	return func(o *optionsImpl) error {
 		if url, err := url.Parse(s); err != nil {
 			return err
 		} else {
-			o.clusterUrl = *url
+			o.clusterURL = *url
 			return nil
 		}
 	}

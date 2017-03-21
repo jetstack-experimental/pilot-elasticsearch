@@ -95,8 +95,8 @@ func (m *Manager) KubeClient() *kubernetes.Clientset {
 func (m *Manager) BuildRequest(method, path, query string, body io.Reader) (*http.Request, error) {
 	// TODO: refactor scheme & host out of this method
 	builtURL := url.URL{
-		Scheme:   m.Options().ClusterUrl().Scheme,
-		Host:     m.Options().ClusterUrl().Host,
+		Scheme:   m.Options().ClusterURL().Scheme,
+		Host:     m.Options().ClusterURL().Host,
 		RawQuery: query,
 		Path:     path,
 	}
