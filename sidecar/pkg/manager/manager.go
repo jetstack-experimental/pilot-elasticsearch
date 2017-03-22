@@ -187,8 +187,8 @@ func (m *Manager) Shutdown() error {
 	}
 
 	if m.esCmd != nil {
-		log.Debugf("sending SIGTERM to elasticsearch process")
-		m.esCmd.Process.Signal(syscall.SIGTERM)
+		log.Debugf("sending SIGHUP to elasticsearch process")
+		m.esCmd.Process.Signal(syscall.SIGHUP)
 		log.Debugf("waiting for elasticsearch process to exit...")
 		state, err := m.esCmd.Process.Wait()
 
