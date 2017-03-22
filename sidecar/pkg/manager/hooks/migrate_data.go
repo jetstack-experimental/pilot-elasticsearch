@@ -101,14 +101,18 @@ func nodeIsEmpty(m manager.Interface) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	resp, err := cl.NodesStats().NodeId("_local").Do(context.TODO())
+
+	resp, err := cl.NodesStats().Do(context.TODO())
 
 	if err != nil {
 		return false, fmt.Errorf("error querying node stats: %s", err.Error())
 	}
 
 	for _, n := range resp.Nodes {
-		return n.Indices.Docs.Count == 0, nil
+		if n.Name == m.Options().PodName() {
+			log.Debugf("Node '%s' contains %d documents", n.Name, n.Indices.Docs.Count)
+			return n.Indices.Docs.Count == 0, nil
+		}
 	}
 
 	return false, fmt.Errorf("local node not found")
