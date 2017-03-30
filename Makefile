@@ -1,4 +1,4 @@
-REGISTRY := eu.gcr.io/jetstack-sandbox
+REGISTRY := jetstackexperimental
 IMAGE_NAME := lieutenant-elastic-search
 BUILD_TAG := build
 IMAGE_TAGS := canary
