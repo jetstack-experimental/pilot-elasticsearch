@@ -29,8 +29,8 @@ var (
 
 	rootCmd = &cobra.Command{
 		Use:   "sidecar",
-		Short: "Kubernetes ElasticSearch Lieutenant",
-		Long: `This is an implementation of a lieutenant for ElasticSearch 5.x.
+		Short: "Kubernetes Elasticsearch Pilot",
+		Long: `This is an implementation of a Pilot for ElasticSearch 5.x.
 
 It should be run in place of the main elasticsearch binary, and will
 automatically invoke elasticsearch appropriately once the environment

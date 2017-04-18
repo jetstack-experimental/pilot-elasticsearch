@@ -14,7 +14,7 @@
 
 package main
 
-import "gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/cmd"
+import "github.com/jetstack-experimental/pilot-elasticsearch/sidecar/cmd"
 
 func main() {
 	cmd.Execute()

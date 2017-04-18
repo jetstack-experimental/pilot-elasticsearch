@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/probe"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/probe"
 )
 
 // Check the health of this Elasticsearch node

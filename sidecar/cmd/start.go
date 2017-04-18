@@ -6,13 +6,13 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"gitlab.jetstack.net/marshal/colonel/pkg/api/v1"
+	"github.com/jetstack-experimental/navigator/pkg/api/v1"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks/events"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/probe"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager/hooks"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager/hooks/events"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/probe"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/util"
 )
 
 var (
@@ -32,7 +32,7 @@ var (
 
 	startCmd = &cobra.Command{
 		Use:   "start",
-		Short: "starts the elasticsearch lieutenant",
+		Short: "starts the elasticsearch pilot",
 		Run: func(cmd *cobra.Command, args []string) {
 			if err := parsePluginsFlag(); err != nil {
 				log.Fatalf("error parsing plugins list: %s", err.Error())
@@ -71,7 +71,7 @@ var (
 				hooks.InstallPlugins(plugins...),
 			)
 
-			// Ensure user exists for the lieutenant
+			// Ensure user exists for the pilot
 			// m.RegisterHooks(manager.PhasePostStart,
 			// 	hooks.AllowErrors(
 			// 		// Only run on data nodes as a shard is required to exist

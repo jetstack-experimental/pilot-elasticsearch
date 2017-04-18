@@ -6,7 +6,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/util"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/util"
 )
 
 // ScaleDown will return true if this pod is shutting down as part of a
