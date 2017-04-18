@@ -3,8 +3,8 @@ package hooks
 import (
 	"fmt"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager/hooks/events"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager/hooks/events"
 )
 
 func OnEvent(e events.Event, hs ...manager.Hook) manager.Hook {

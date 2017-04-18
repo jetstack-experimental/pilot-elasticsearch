@@ -1,5 +1,5 @@
 {
-	"ImportPath": "gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar",
+	"ImportPath": "github.com/jetstack-experimental/pilot-elasticsearch/sidecar",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
 	"Packages": [
@@ -147,6 +147,10 @@
 			"Rev": "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
 		},
 		{
+			"ImportPath": "github.com/jetstack-experimental/navigator/pkg/api/v1",
+			"Rev": "7fe907576c1ff2fab726686846749ade1b7d2207"
+		},
+		{
 			"ImportPath": "github.com/juju/ratelimit",
 			"Rev": "77ed1c8a01217656d2080ad51981f6e99adaa177"
 		},
@@ -211,10 +215,6 @@
 		{
 			"ImportPath": "github.com/ugorji/go/codec",
 			"Rev": "d23841a297e5489e787e72fceffabf9d2994b52a"
-		},
-		{
-			"ImportPath": "gitlab.jetstack.net/marshal/colonel/pkg/api/v1",
-			"Rev": "38e0af09cb589088a1b0f899ae5be123028be2eb"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/ssh/terminal",

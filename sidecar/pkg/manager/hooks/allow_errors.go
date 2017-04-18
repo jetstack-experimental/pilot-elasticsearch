@@ -3,7 +3,7 @@ package hooks
 import (
 	log "github.com/Sirupsen/logrus"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
 )
 
 // AllowErrors will execute the provided hook, logging

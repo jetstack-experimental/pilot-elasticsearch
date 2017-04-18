@@ -5,9 +5,10 @@ import (
 	"os"
 	"os/exec"
 
-	"gitlab.jetstack.net/marshal/colonel/pkg/api/v1"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/es"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/navigator/pkg/api/v1"
+
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/es"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
 )
 
 // InstallPlugins returns a hook that will install the plugins specified in

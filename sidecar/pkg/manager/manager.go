@@ -17,8 +17,8 @@ import (
 	"gopkg.in/olivere/elastic.v5"
 	"k8s.io/client-go/kubernetes"
 
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/es"
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/probe"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/es"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/probe"
 )
 
 const (
@@ -183,7 +183,7 @@ func (m *Manager) Shutdown() error {
 	log.Infof("initiating shutdown...")
 	defer os.Exit(1)
 	if err := m.transitionPhase(PhasePreStop); err != nil {
-		return fmt.Errorf("error running lieutenant pre stop hooks: %s", err.Error())
+		return fmt.Errorf("error running pilot pre stop hooks: %s", err.Error())
 	}
 
 	if m.esCmd != nil {
@@ -202,7 +202,7 @@ func (m *Manager) Shutdown() error {
 	}
 
 	if err := m.transitionPhase(PhasePostStop); err != nil {
-		return fmt.Errorf("error running lieutenant post stop hooks: %s", err.Error())
+		return fmt.Errorf("error running pilot post stop hooks: %s", err.Error())
 	}
 
 	return nil

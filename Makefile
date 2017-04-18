@@ -1,5 +1,5 @@
 REGISTRY := jetstackexperimental
-IMAGE_NAME := lieutenant-elastic-search
+IMAGE_NAME := pilot-elasticsearch
 BUILD_TAG := build
 IMAGE_TAGS := canary
 

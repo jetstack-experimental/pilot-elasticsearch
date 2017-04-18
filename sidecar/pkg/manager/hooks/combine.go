@@ -1,7 +1,7 @@
 package hooks
 
 import (
-	"gitlab.jetstack.net/marshal/lieutenant-elastic-search/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
 )
 
 func Combine(hooks ...manager.Hook) manager.Hook {
