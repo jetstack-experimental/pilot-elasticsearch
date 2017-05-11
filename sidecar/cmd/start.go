@@ -6,7 +6,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/jetstack-experimental/navigator/pkg/api/v1"
+	"github.com/jetstack-experimental/navigator/pkg/apis/marshal/v1alpha1"
 
 	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
 	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager/hooks"
@@ -20,7 +20,7 @@ var (
 	namespace                      string
 	podName                        string
 	roles                          []util.Role
-	plugins                        []v1.ElasticsearchClusterPlugin
+	plugins                        []v1alpha1.ElasticsearchClusterPlugin
 	controllerName, controllerKind string
 
 	esSidecarUsername = "_sidecar"

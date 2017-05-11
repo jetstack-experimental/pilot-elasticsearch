@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/jetstack-experimental/navigator/pkg/api/v1"
+	"github.com/jetstack-experimental/navigator/pkg/apis/marshal/v1alpha1"
 
 	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/es"
 	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
@@ -13,7 +13,7 @@ import (
 
 // InstallPlugins returns a hook that will install the plugins specified in
 // plugins. If any of the plugins fail to install, an error will be returned
-func InstallPlugins(plugins ...v1.ElasticsearchClusterPlugin) func(manager.Interface) error {
+func InstallPlugins(plugins ...v1alpha1.ElasticsearchClusterPlugin) func(manager.Interface) error {
 	return func(m manager.Interface) error {
 		for _, plugin := range plugins {
 			if plugin.Name == "" {
