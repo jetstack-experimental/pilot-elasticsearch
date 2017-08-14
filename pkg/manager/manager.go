@@ -17,8 +17,8 @@ import (
 	"gopkg.in/olivere/elastic.v5"
 	"k8s.io/client-go/kubernetes"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/es"
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/probe"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/es"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/probe"
 )
 
 const (

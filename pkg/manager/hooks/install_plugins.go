@@ -7,8 +7,8 @@ import (
 
 	"github.com/jetstack-experimental/navigator/pkg/apis/marshal/v1alpha1"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/es"
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/es"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/manager"
 )
 
 // InstallPlugins returns a hook that will install the plugins specified in

@@ -5,7 +5,7 @@ import (
 
 	"net/url"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/util"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/util"
 )
 
 type kubernetesOptions interface {

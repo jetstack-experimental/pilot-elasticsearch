@@ -8,7 +8,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/manager"
 )
 
 // DrainShards sets the cluster.routing.allocation.exclude._name key to this

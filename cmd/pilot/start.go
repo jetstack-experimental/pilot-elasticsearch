@@ -8,11 +8,11 @@ import (
 
 	"github.com/jetstack-experimental/navigator/pkg/apis/marshal/v1alpha1"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager/hooks"
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager/hooks/events"
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/probe"
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/util"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/manager/hooks"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/manager/hooks/events"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/probe"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/util"
 )
 
 var (
