@@ -14,8 +14,8 @@
 
 package main
 
-import "github.com/jetstack-experimental/pilot-elasticsearch/cmd"
+import "github.com/jetstack-experimental/pilot-elasticsearch/cmd/pilot"
 
 func main() {
-	cmd.Execute()
+	pilot.Execute()
 }

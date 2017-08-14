@@ -6,7 +6,7 @@ IMAGE_TAGS := canary
 all: build docker_build
 
 build:
-	cd sidecar; CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w' -o sidecar_linux_amd64 .
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -a -tags netgo -ldflags '-w' -o pilot_linux_amd64 .
 
 docker_build:
 	docker build -t $(REGISTRY)/$(IMAGE_NAME):$(BUILD_TAG) .
@@ -24,7 +24,7 @@ test_helm:
 	helm lint contrib/charts/elasticsearch
 
 test_golang:
-	go test $(shell go list ./sidecar/... | grep -v '/vendor/')
+	go test $(shell go list ./... | grep -v '/vendor/')
 
 fmt_golang:
 	@set -e; \
@@ -36,4 +36,4 @@ fmt_golang:
 	fi
 
 vet_golang:
-	go vet $(shell go list ./sidecar/... | grep -v '/vendor/')
+	go vet $(shell go list ./... | grep -v '/vendor/')
