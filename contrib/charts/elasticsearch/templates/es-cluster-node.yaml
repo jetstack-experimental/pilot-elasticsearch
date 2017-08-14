@@ -18,12 +18,9 @@ metadata:
     release: "{{ $.Release.Name }}"
     heritage: "{{ $.Release.Service }}"
     nodePool: {{ $nodePool.name | quote }}
-    client: "true"
-    master: "true"
-    data: "true"
-# {{- range $role := $nodePool.roles }}
-#     {{ $role }}: "true"
-# {{- end }}
+{{- range $role := $nodePool.roles }}
+    {{ $role }}: "true"
+{{- end }}
 spec:
   replicas: {{ $nodePool.replicas }}
   template:
@@ -53,12 +50,9 @@ spec:
         release: "{{ $.Release.Name }}"
         heritage: "{{ $.Release.Service }}"
         nodePool: {{ $nodePool.name | quote }}
-        client: "true"
-        master: "true"
-        data: "true"
-# {{- range $role := $nodePool.roles }}
-#         {{ $role }}: "true"
-# {{- end }}
+{{- range $role := $nodePool.roles }}
+        {{ $role }}: "true"
+{{- end }}
     spec:
       terminationGracePeriodSeconds: 1800
       serviceAccount: "{{ template "fullname" $ }}"
