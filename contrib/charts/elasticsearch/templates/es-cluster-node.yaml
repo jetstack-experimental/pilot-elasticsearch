@@ -25,25 +25,6 @@ spec:
   replicas: {{ $nodePool.replicas }}
   template:
     metadata:
-      annotations:
-        # TODO: does not support >1 sysctl option
-        pod.beta.kubernetes.io/init-containers: '[
-          {{- range $sysctl := $.Values.sysctl }}
-          {
-            "name": "tune-sysctl",
-            "image": "busybox",
-            "imagePullPolicy": "IfNotPresent",
-            "securityContext": {
-              "privileged": true
-            },
-            "command": [
-              "sysctl",
-              "-w",
-              "{{ $sysctl }}"
-            ]
-          }
-          {{- end }}
-        ]'
       labels:
         app: {{ template "fullname" $ }}
         chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
@@ -59,13 +40,35 @@ spec:
       serviceAccountName: "{{ template "fullname" $ }}"
       securityContext:
         fsGroup: {{ $.Values.image.fsGroup }}
+      initContainers:
+      - name: tune-sysctl
+        image: alpine:3.5
+        imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 20m
+            memory: 64Mi
+        securityContext:
+          privileged: true
+        command:
+        - /bin/sh
+        - -c
+        - |
+          #!/bin/sh
+          set -e
+          {{- range $sysctl := $.Values.sysctl }}
+          sysctl -w {{ $sysctl }}
+          {{- end }}
       containers:
       - name: elasticsearch
         image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
         imagePullPolicy: {{ $.Values.image.pullPolicy | quote }}
         args:
         - start
-        - --roles=["data","client","master"]
+        - --roles={{ toJson $nodePool.roles }}
         - --clusterURL=http://{{ template "fullname" $ }}:9200
         - --controllerName="{{ template "fullname" $ }}-{{ $nodePool.name }}"
 {{- if $nodePool.state.stateful }}
