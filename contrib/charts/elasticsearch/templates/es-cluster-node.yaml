@@ -127,13 +127,7 @@ spec:
         - name: elasticsearch-data
           mountPath: /usr/share/elasticsearch/data
           readOnly: false
-        - name: sidecar-config
-          mountPath: /config
-          readOnly: true
       volumes:
-      - name: sidecar-config
-        configMap:
-          name: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
 {{- if not $nodePool.state.persistence.enabled }}
       - name: elasticsearch-data
         emptyDir: {}
