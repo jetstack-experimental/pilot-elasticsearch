@@ -77,7 +77,7 @@ spec:
         - --controllerKind=Deployment
 {{- end }}
         env:
-        - name: KUBERNETES_NAMESPACE
+        - name: NAMESPACE
           valueFrom:
             fieldRef:
               fieldPath: metadata.namespace
@@ -85,8 +85,13 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: DISCOVERY_HOST
+        - name: ES_JAVA_OPTS
+          value: -Djava.net.preferIPv4Stack=true -Des.cgroups.hierarchy.override=/
+        - name: DISCOVERY_SERVICE
           value: {{ template "fullname" $ }}-masters
+        # the minimum number of masters required to form a quorom
+        - name: NUMBER_OF_MASTERS
+          value: '1'
         - name: CONTROLLER_KIND
 {{- if $nodePool.state.stateful }}
           value: StatefulSet

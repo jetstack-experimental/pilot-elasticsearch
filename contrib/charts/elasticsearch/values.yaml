@@ -4,7 +4,7 @@
 
 version: '5.2.2'
 plugins:
-- name: "io.fabric8:elasticsearch-cloud-kubernetes:5.2.2"
+#- name: "io.fabric8:elasticsearch-cloud-kubernetes:5.2.2"
 
 # NOTE: DO NOT SPECIFY MORE THAN ONE SYSCTL FOR NOW
 sysctl:
