@@ -3,7 +3,7 @@ package es
 import (
 	"fmt"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/util"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/util"
 )
 
 // Env returns the environment variables to be used when running ElasticSearch

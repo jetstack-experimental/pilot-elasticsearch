@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/manager"
 
 	"bytes"
 )

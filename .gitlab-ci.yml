@@ -22,7 +22,7 @@ test:helm:
   # Grab helm
   - apk add --no-cache openssl make
   - HELM_URL=https://storage.googleapis.com/kubernetes-helm
-  - HELM_TARBALL=helm-canary-linux-amd64.tar.gz
+  - HELM_TARBALL=helm-v2.5.1-linux-amd64.tar.gz
   - wget -q ${HELM_URL}/${HELM_TARBALL}
   - tar xzfv ${HELM_TARBALL}
   - PATH=`pwd`/linux-amd64/:$PATH make test_helm
@@ -60,7 +60,7 @@ build:golang:
   - make build
   artifacts:
     paths:
-    - sidecar/sidecar_linux_amd64
+    - pilot_linux_amd64
 
 docker:image:
   image: docker:latest

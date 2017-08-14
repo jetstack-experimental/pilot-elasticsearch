@@ -1,0 +1,14 @@
+language: go
+
+services:
+- docker
+
+before_script:
+- HELM_URL=https://storage.googleapis.com/kubernetes-helm
+- HELM_TARBALL=helm-v2.5.1-linux-amd64.tar.gz
+- wget -q ${HELM_URL}/${HELM_TARBALL}
+- tar xzfv ${HELM_TARBALL}
+- export PATH=`pwd`/linux-amd64/:$PATH make test_helm
+
+script:
+- make test all

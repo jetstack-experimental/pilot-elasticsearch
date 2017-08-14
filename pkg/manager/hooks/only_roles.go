@@ -3,8 +3,8 @@ package hooks
 import (
 	log "github.com/Sirupsen/logrus"
 
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/manager"
-	"github.com/jetstack-experimental/pilot-elasticsearch/sidecar/pkg/util"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/manager"
+	"github.com/jetstack-experimental/pilot-elasticsearch/pkg/util"
 )
 
 // OnlyRoles will only execute the Hook if the node is of one
