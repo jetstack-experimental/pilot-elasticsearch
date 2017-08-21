@@ -20,7 +20,7 @@ func OnEvent(e events.Event, hs ...manager.Hook) manager.Hook {
 			)
 
 			if err != nil {
-				return fmt.Errorf("error checking scale down event")
+				return fmt.Errorf("error checking scale down event: %s", err.Error())
 			}
 
 			if scaleDown {
