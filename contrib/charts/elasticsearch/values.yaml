@@ -2,13 +2,18 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-version: '5.2.2'
 plugins:
-#- name: "io.fabric8:elasticsearch-cloud-kubernetes:5.2.2"
+# this plugin is no longer required
+# - name: "io.fabric8:elasticsearch-cloud-kubernetes:5.2.2"
 
-# NOTE: DO NOT SPECIFY MORE THAN ONE SYSCTL FOR NOW
+minimumMasters: 2
+
 sysctl:
 - vm.max_map_count=262144
+
+rbac:
+  create: true
+  # serviceAccountName: ""
 
 image:
   repository: jetstackexperimental/pilot-elasticsearch
@@ -20,86 +25,36 @@ image:
   fsGroup: 1000
 
 nodePools:
-- name: data
-  replicas: 1
-
-  roles:
-  - data
-
-  resources:
-    requests:
-      cpu: 1
-      memory: 2Gi
-    limits:
-      cpu: 2
-      memory: 4Gi
-
-  state:
-    # stateful defines whether to create a StatefulSet or a Deployment
-    stateful: false
-
-    # persistent sets persistent storage config
-    persistence:
-      # enabled will only have an effect if stateful is also true. If true,
-      # the persistentVolumeClaims block of the StatefulSet will be set
-      enabled: false
-      # size of the volume
-      size: 10Gi
-      # storageClass of the volume
-      storageClass: "fast"
-
-- name: client
-  replicas: 1
-
-  roles:
-  - client
-
-  resources:
-    requests:
-      cpu: 1
-      memory: 2Gi
-    limits:
-      cpu: 2
-      memory: 4Gi
-
-  state:
-    # stateful defines whether to create a StatefulSet or a Deployment
-    stateful: false
-
-    # persistent sets persistent storage config
-    persistence:
-      # enabled will only have an effect if stateful is also true. If true,
-      # the persistentVolumeClaims block of the StatefulSet will be set
-      enabled: false
-      # size of the volume
-      size: 10Gi
-      # storageClass of the volume
-      storageClass: "fast"
-
-- name: master
-  replicas: 1
+- name: mixed
+  replicas: 3
 
   roles:
   - master
+  - client
+  - data
+
+  # nodeSelector:
+  #   node-role.kubernetes.io/node: storage
+
+  # podManagementPolicy: "Parallel"
+
+  env:
+    ES_JAVA_OPTS: -Djava.net.preferIPv4Stack=true -Des.cgroups.hierarchy.override=/ -Xms1g -Xmx1g
 
   resources:
     requests:
-      cpu: 1
-      memory: 2Gi
+      cpu: '500m'
+      memory: 1536Mi
     limits:
-      cpu: 2
-      memory: 4Gi
+      cpu: '1'
+      memory: 1536Mi
 
-  state:
-    # stateful defines whether to create a StatefulSet or a Deployment
-    stateful: false
-
-    # persistent sets persistent storage config
-    persistence:
-      # enabled will only have an effect if stateful is also true. If true,
-      # the persistentVolumeClaims block of the StatefulSet will be set
-      enabled: false
-      # size of the volume
-      size: 10Gi
-      # storageClass of the volume
-      storageClass: "fast"
+  # persistent sets persistent storage config
+  persistence:
+    # enabled will only have an effect if stateful is also true. If true,
+    # the persistentVolumeClaims block of the StatefulSet will be set
+    enabled: false
+    # size of the volume
+    # size: 30Gi
+    # storageClass of the volume
+    # storageClass: ""

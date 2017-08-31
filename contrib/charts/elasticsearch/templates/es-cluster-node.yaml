@@ -1,11 +1,6 @@
 {{- range $nodePool := .Values.nodePools }}
-{{- if $nodePool.state.stateful }}
 apiVersion: apps/v1beta1
 kind: StatefulSet
-{{- else }}
-apiVersion: extensions/v1beta1
-kind: Deployment
-{{- end}}
 metadata:
   name: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
 {{- if $nodePool.ownerReferences }}
@@ -23,6 +18,7 @@ metadata:
 {{- end }}
 spec:
   replicas: {{ $nodePool.replicas }}
+  podManagementPolicy: {{ default "OrderedReady" $nodePool.podManagementPolicy | quote }}
   template:
     metadata:
       labels:
@@ -35,33 +31,31 @@ spec:
         {{ $role }}: "true"
 {{- end }}
     spec:
-      terminationGracePeriodSeconds: 1800
-      serviceAccount: "{{ template "fullname" $ }}"
-      serviceAccountName: "{{ template "fullname" $ }}"
+      nodeSelector:
+{{ toYaml $nodePool.nodeSelector | indent 8 }}
+      terminationGracePeriodSeconds: 60
+      serviceAccountName: {{ if $.Values.rbac.create }}{{ template "fullname" $ }}{{ else }}"{{ $.Values.rbac.serviceAccountName }}"{{ end }}
       securityContext:
         fsGroup: {{ $.Values.image.fsGroup }}
       initContainers:
-      - name: tune-sysctl
+{{- range $index, $sysctl := $.Values.sysctl }}
+      - name: tune-sysctl-{{ $index }}
         image: alpine:3.5
         imagePullPolicy: IfNotPresent
         resources:
           requests:
             cpu: 10m
-            memory: 32Mi
+            memory: 8Mi
           limits:
-            cpu: 20m
-            memory: 64Mi
+            cpu: 10m
+            memory: 8Mi
         securityContext:
           privileged: true
         command:
-        - /bin/sh
-        - -c
-        - |
-          #!/bin/sh
-          set -e
-          {{- range $sysctl := $.Values.sysctl }}
-          sysctl -w {{ $sysctl }}
-          {{- end }}
+        - sysctl
+        - -w
+        - {{ $sysctl | quote }}
+{{- end }}
       containers:
       - name: elasticsearch
         image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
@@ -71,11 +65,8 @@ spec:
         - --roles={{ toJson $nodePool.roles }}
         - --clusterURL=http://{{ template "fullname" $ }}:9200
         - --controllerName="{{ template "fullname" $ }}-{{ $nodePool.name }}"
-{{- if $nodePool.state.stateful }}
         - --controllerKind=StatefulSet
-{{- else }}
-        - --controllerKind=Deployment
-{{- end }}
+        - --namespace=$(NAMESPACE)
         env:
         - name: NAMESPACE
           valueFrom:
@@ -85,19 +76,15 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: metadata.name
-        - name: ES_JAVA_OPTS
-          value: -Djava.net.preferIPv4Stack=true -Des.cgroups.hierarchy.override=/
+{{- range $k, $v := $nodePool.env }}
+        - name: {{ $k }}
+          value: {{ $v }}
+{{- end }}
         - name: DISCOVERY_SERVICE
           value: {{ template "fullname" $ }}-masters
         # the minimum number of masters required to form a quorom
         - name: NUMBER_OF_MASTERS
-          value: '1'
-        - name: CONTROLLER_KIND
-{{- if $nodePool.state.stateful }}
-          value: StatefulSet
-{{- else }}
-          value: Deployment
-{{- end }}
+          value: '{{ required "Minimum number of masters must be set" $.Values.minimumMasters }}'
         readinessProbe:
           httpGet:
             port: 12001
@@ -126,28 +113,59 @@ spec:
         volumeMounts:
         - name: elasticsearch-data
           mountPath: /usr/share/elasticsearch/data
-          readOnly: false
       volumes:
-{{- if not $nodePool.state.persistence.enabled }}
+{{- if not $nodePool.persistence.enabled }}
       - name: elasticsearch-data
         emptyDir: {}
 {{- else }}
-{{- if $nodePool.state.stateful }}
-  serviceName: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
   volumeClaimTemplates:
   - metadata:
       name: elasticsearch-data
       annotations:
-      {{- if $nodePool.state.persistence.storageClass }}
-        volume.beta.kubernetes.io/storage-class: {{ $nodePool.state.persistence.storageClass | quote }}
+      {{- if $nodePool.persistence.storageClass }}
+        volume.beta.kubernetes.io/storage-class: {{ $nodePool.persistence.storageClass | quote }}
       {{- end }}
     spec:
       accessModes:
       - ReadWriteOnce
       resources:
         requests:
-          storage: {{ $nodePool.state.persistence.size | quote }}
+          storage: {{ $nodePool.persistence.size | quote }}
 {{- end }}
+  serviceName: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ template "fullname" $ }}-{{ $nodePool.name }}"
+{{- if $nodePool.ownerReferences }}
+  ownerReferences:
+{{ toYaml $nodePool.ownerReferences | indent 4 }}
 {{- end }}
+  labels:
+    app: {{ template "fullname" $ }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    nodePool: {{ $nodePool.name | quote }}
+{{- range $role := $nodePool.roles }}
+    {{ $role }}: "true"
+{{- end }}
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - name: api
+    port: 9200
+    targetPort: 9200
+  - name: transport
+    port: 9300
+    targetPort: 9300
+  selector:
+    app: {{ template "fullname" $ }}
+    chart: "{{ $.Chart.Name }}-{{ $.Chart.Version }}"
+    release: "{{ $.Release.Name }}"
+    heritage: "{{ $.Release.Service }}"
+    nodePool: {{ $nodePool.name | quote }}
 ---
 {{- end }}
