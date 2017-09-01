@@ -152,6 +152,12 @@ func (m *Manager) Phase() Phase {
 	return m.phase
 }
 
+func (m *Manager) ESArgs() []string {
+	return []string{
+		fmt.Sprintf("-Epath.conf=%s", m.Options().ConfigDirPath()),
+	}
+}
+
 // Run will start Elasticsearch with the managers provided configuration.
 // It will block until Elasticsearch is exited, for whatever reason, It is
 // responsible for firing preStart and postStart hooks.
@@ -160,7 +166,7 @@ func (m *Manager) Run() error {
 		return fmt.Errorf("error running: %s", err.Error())
 	}
 
-	m.esCmd = exec.Command(m.Options().ElasticsearchBin())
+	m.esCmd = exec.Command(m.Options().ElasticsearchBin(), m.ESArgs()...)
 	m.esCmd.Stdout = os.Stdout
 	m.esCmd.Stderr = os.Stderr
 	m.esCmd.Env = append(os.Environ(), es.Env(m.Options().Roles())...)

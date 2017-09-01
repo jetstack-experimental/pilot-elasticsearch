@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "{{ template "fullname" . }}"
+  labels:
+    app: "{{ template "fullname" . }}"
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+data:
+  elasticsearch.yml: |
+    node.data: ${NODE_DATA}
+    node.master: ${NODE_MASTER}
+    node.ingest: ${NODE_INGEST}
+    node.name: ${HOSTNAME}
+
+    network.host: 0.0.0.0
+
+    discovery:
+      zen:
+        ping.unicast.hosts: ${DISCOVERY_SERVICE}
+        minimum_master_nodes: ${NUMBER_OF_MASTERS}
+
+    xpack.security.enabled: false
+
+  log4j2.properties: |
+    status = error
+
+    appender.console.type = Console
+    appender.console.name = console
+    appender.console.layout.type = PatternLayout
+    appender.console.layout.pattern = [%d{ISO8601}][%-5p][%-25c{1.}] %marker%m%n
+
+    rootLogger.level = debug
+    rootLogger.appenderRef.console.ref = console

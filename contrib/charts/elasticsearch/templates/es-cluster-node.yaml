@@ -56,17 +56,36 @@ spec:
         - -w
         - {{ $sysctl | quote }}
 {{- end }}
+      - name: install-pilot
+        image: "{{ $.Values.pilot.repository }}:{{ $.Values.pilot.tag }}"
+        imagePullPolicy: {{ $.Values.pilot.pullPolicy | quote }}
+        command:
+        - cp
+        - /pilot
+        - /shared/pilot
+        volumeMounts:
+        - name: shared
+          mountPath: /shared
+        resources:
+          requests:
+            cpu: 10m
+            memory: 8Mi
       containers:
       - name: elasticsearch
         image: "{{ $.Values.image.repository }}:{{ $.Values.image.tag }}"
         imagePullPolicy: {{ $.Values.image.pullPolicy | quote }}
-        args:
-        - start
-        - --roles={{ toJson $nodePool.roles }}
-        - --clusterURL=http://{{ template "fullname" $ }}:9200
-        - --controllerName="{{ template "fullname" $ }}-{{ $nodePool.name }}"
-        - --controllerKind=StatefulSet
-        - --namespace=$(NAMESPACE)
+        command:
+        - /bin/sh
+        - -c
+        - |
+          #!/bin/sh
+          exec /shared/pilot \
+            start \
+            --roles='{{ toJson $nodePool.roles }}' \
+            --clusterURL='http://{{ template "fullname" $ }}:9200' \
+            --controllerName='{{ template "fullname" $ }}-{{ $nodePool.name }}' \
+            --controllerKind='StatefulSet' \
+            --namespace="$(NAMESPACE)"
         env:
         - name: NAMESPACE
           valueFrom:
@@ -113,7 +132,16 @@ spec:
         volumeMounts:
         - name: elasticsearch-data
           mountPath: /usr/share/elasticsearch/data
+        - name: shared
+          mountPath: /shared
+        - name: config
+          mountPath: /config
       volumes:
+      - name: shared
+        emptyDir: {}
+      - name: config
+        configMap:
+          name: "{{ template "fullname" $ }}"
 {{- if not $nodePool.persistence.enabled }}
       - name: elasticsearch-data
         emptyDir: {}
