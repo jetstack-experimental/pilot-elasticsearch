@@ -25,6 +25,7 @@ var (
 
 	esSidecarUsername = "_sidecar"
 	esSidecarPassword string
+	configDirPath     string
 	clusterURL        string
 
 	pluginsFlag string
@@ -55,6 +56,7 @@ var (
 				manager.SetNamespace(namespace),
 				manager.SetRoles(roles),
 				manager.SetClusterURL(clusterURL),
+				manager.SetConfigDirPath(configDirPath),
 			)
 
 			if err != nil {
@@ -151,6 +153,7 @@ func init() {
 	startCmd.PersistentFlags().StringVar(&controllerKind, "controllerKind", "", "Kind of the controller managing this node")
 	startCmd.PersistentFlags().StringVar(&clusterURL, "clusterURL", "", "URL for communicating with Elasticsearch client nodes")
 	startCmd.PersistentFlags().StringVar(&esSidecarPassword, "sidecarUserPassword", "insecure", "The password to use for the sidecars ElasticSearch user account")
+	startCmd.PersistentFlags().StringVar(&configDirPath, "configDir", "/config", "the directory containing Elasticsearch config files")
 
 	rootCmd.AddCommand(startCmd)
 }

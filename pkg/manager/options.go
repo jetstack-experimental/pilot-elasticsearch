@@ -30,6 +30,8 @@ type elasticsearchOptions interface {
 	ElasticsearchBin() string
 	// ClusterURL that can be used to talk to client nodes
 	ClusterURL() url.URL
+	// ConfigDirPath is the path to the config directory for elasticsearch
+	ConfigDirPath() string
 }
 
 type Options interface {
@@ -62,6 +64,7 @@ type optionsImpl struct {
 	sidecarUsername                string
 	sidecarPassword                string
 	clusterURL                     url.URL
+	configDirPath                  string
 }
 
 var _ Options = &optionsImpl{}
@@ -86,6 +89,12 @@ func (o *optionsImpl) ElasticsearchBin() string {
 func (o *optionsImpl) SidecarUsername() string { return o.sidecarUsername }
 func (o *optionsImpl) SidecarPassword() string { return o.sidecarPassword }
 func (o *optionsImpl) ClusterURL() url.URL     { return o.clusterURL }
+func (o *optionsImpl) ConfigDirPath() string {
+	if len(o.configDirPath) > 0 {
+		return o.configDirPath
+	}
+	return "/usr/share/elasticsearch/config"
+}
 
 type optionsFn func(*optionsImpl) error
 
@@ -166,5 +175,12 @@ func SetClusterURL(s string) optionsFn {
 			o.clusterURL = *url
 			return nil
 		}
+	}
+}
+
+func SetConfigDirPath(s string) optionsFn {
+	return func(o *optionsImpl) error {
+		o.configDirPath = s
+		return nil
 	}
 }
