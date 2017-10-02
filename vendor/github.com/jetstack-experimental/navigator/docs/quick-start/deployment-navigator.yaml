@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: marshal
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: navigator
+  namespace: marshal
+  labels:
+    app: navigator
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: navigator
+    spec:
+      containers:
+      - name: navigator
+        image: jetstackexperimental/navigator:latest
+        imagePullPolicy: Always
